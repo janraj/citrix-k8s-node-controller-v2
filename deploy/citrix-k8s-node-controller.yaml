@@ -1,0 +1,77 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: nodecontroller
+rules:
+  - apiGroups: [""]
+    resources: ["services", "endpoints", "ingresses", "pods", "secrets", "nodes"]
+    verbs: ["*"]
+
+  - apiGroups: ["extensions"]
+    resources: ["ingresses", "ingresses/status"]
+    verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: nodecontroller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nodecontroller
+subjects:
+- kind: ServiceAccount
+  name: nodecontroller
+  namespace: default
+apiVersion: rbac.authorization.k8s.io/v1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nodecontroller
+  namespace: citrixnode
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodecontroller
+  labels:
+    app: nodecontroller
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+  selector:
+    app: nodecontroller
+---
+apiVersion: apps/v1 #  for k8s versions before 1.9.0 use apps/v1beta2  and before 1.8.0 use extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nodecontroller
+spec:
+  selector:
+    matchLabels:
+      app: nodecontroller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nodecontroller
+    spec:
+      serviceAccountName: nodecontroller
+      containers:
+      - name: nodecontroller
+        image: "citrix-k8s-node-controller:latest"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: NS_URL
+          value: "xxxxxxx"
+        - name: NS_LOGIN
+          value: "xxxxx"
+        - name: NS_PASSWORD
+          value: "xxxxx"
+        - name: NS_IP
+          value: "xxx.xxx.xxx.xxx"
+        - name: NS_VTEP_MAC
+          value: "xx:xx:xx:xx:xx:xx"
+
