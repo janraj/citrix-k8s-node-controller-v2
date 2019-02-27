@@ -1,5 +1,11 @@
-dist: trusty
 language: go
+
+os:
+  - linux
+
+services:
+  - docker
+
 before_script: cd build
 jobs:
   include:

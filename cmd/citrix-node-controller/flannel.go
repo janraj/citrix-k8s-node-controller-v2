@@ -64,7 +64,7 @@ func (api KubernetesAPIServer)GetDummyNode(obj *ControllerInput) (*v1.Node){
 	if err != nil {
 		return nil
 	}
-        fmt.Printf("Get Node  %q.\n", node, node.GetObjectMeta().GetName())
+        fmt.Printf("Get Node \n", node, node.GetObjectMeta().GetName())
 	return node
 }
 
