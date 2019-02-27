@@ -3,6 +3,9 @@ language: go
 os:
   - linux
 
+go:
+  - 1.11.5
+
 services:
   - docker
 
