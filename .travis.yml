@@ -9,6 +9,14 @@ go:
 services:
   - docker
 
+env:
+  global:
+    - NS_IP=citrix.node.controller.com
+    - NS_VTEP_MAC=aa:aa:aa:aa:aa
+    - NS_LOGIN=admin
+    - NS_PASSWORD=test
+      
+
 before_script: cd build
 jobs:
   include:
