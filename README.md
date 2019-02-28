@@ -6,30 +6,32 @@ When services on Kubernetes expose to external access via the Ingress device, th
 
 ## **Architecture**
 This is the high-level preview of Citrix node controller architecture. Following are the main components.	
+
+
 ![](./images/CitrixControllerArchitecture.png)
        <details>
        <summary>**Ingress Interface**</summary>
-	Ingress Interface is responsible for interacting with Citrix ADC via nitro rest API. It maintains the nitro session and invokes it when required. 
+	    Ingress Interface is responsible for interacting with Citrix ADC via nitro rest API. It maintains the nitro session and invokes it when required. 
        </details>
        <details>
        <summary>**K8s Interface**</summary>
-	This module interacts with Kube API server via K8s Go Client. It ensures the availability of client and maintains a healthy client session.
+	    This module interacts with Kube API server via K8s Go Client. It ensures the availability of client and maintains a healthy client session.
        </details>
        <details>
        <summary>**Node Watcher**</summary>
-	The node watcher unit is used to watch the node events via K8s Interface. It responds to the node events such as node addition, deletion or modification with its call back functions.
+	    The node watcher unit is used to watch the node events via K8s Interface. It responds to the node events such as node addition, deletion or modification with its call            back functions.
        </details>
        <details>
        <summary>**Input Feeder**</summary>
-	It provides inputs to the config decider. Some of the inputs are auto detect and the rest are taken from the CNC deployment yaml. 
+	    It provides inputs to the config decider. Some of the inputs are auto detect and the rest are taken from the CNC deployment yaml. 
        </details>
        <details>
        <summary>**Config Decider**</summary>
-	This segment takes inputs from both the node watcher and the input feeder and decides the best network automation required between cluster and NetScaler.
+	    This segment takes inputs from both the node watcher and the input feeder and decides the best network automation required between cluster and NetScaler.
        </details>
        <details>
        <summary>**Core**</summary>
-	The core module interacts with node watcher and updates the corresponding config engine.  It is responsible for starting the best config engine for the corresponding cluster.
+	    The core module interacts with node watcher and updates the corresponding config engine.  It is responsible for starting the best config engine for the corresponding             cluster.
        </details>
 
 ## **Questions**
