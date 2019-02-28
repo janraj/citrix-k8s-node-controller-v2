@@ -32,21 +32,11 @@
        <summary>NS_USER and NS_PASSWORD</summary>
 
          This is for authenticating with NetScaler if it has non default username and password. We can directly pass username/password or use Kubernetes secrets.
-         Please refer our [guide](https://github.com/citrix/citrix-k8s-ingress-controller/blob/master/docs/command-policy.md) for configuring a non default NetScaler username and password.
-         
-         Given Yaml uses k8s secrets. Following steps helps to create secrets to be used in yaml.
-
-         Create secrets on Kubernetes for NS_USER and NS_PASSWORD
-         Kubernetes secrets can be created by using 'kubectl create secret'.  
-
-                 kubectl create secret  generic nslogin --from-literal=username='nsroot' --from-literal=password='nsroot'
-
-         >**Note:** If you are using different secret name rather than nslogin, you have to update the "name" field in the yaml. 
 
        </details>
        <details>
        <summary>NS_VTEP_MAC</summary>
-
+         NetScaler MAC of VTEP IP, which is required for Flannel CNI.
        </details>
     
 3. Deploy Citrix Node Controller. 
