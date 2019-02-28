@@ -16,6 +16,9 @@ jobs:
     - stage: Build Citrix Node Controller
       script:
         - make build
+    - stage: Unit Testing Citrix Node Controller
+      script:
+        - make test
     - stage: Publish Citrix Node Controller 
       script:
         - make publish
