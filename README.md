@@ -5,17 +5,16 @@ Citrix Node Controller (CNC) is a micro service which creates the network betwee
 When services on Kubernetes expose to external access via the Ingress device, there has to be proper networking between the Kubernetes nodes and ingress device to route the traffic into the cluster.   This is important because the pods will be having private IP’s based on the CNI framework.  These Private IP’s will not be able to directly access from ingress device without proper network configurations. Manual configuration to ensure such reachability is troublesome in Kubernetes world.
 
 ## **Architecture**
-This is the high-level preview of Citrix node controller architecture. Following are the main components.
-	
-	```
+This is the high-level preview of Citrix node controller architecture. Following are the main components.	
+```
         1. Ingress Interface
 	2. K8s  Interface
 	3. Input Feeder
 	4. Config Decider
 	5. Node Watcher
 	6. Core
-	```
-	![](images/CitrixControllerArchitecture.png)
+```
+![](./images/CitrixControllerArchitecture.png)
 #### Ingress Interface
 Ingress Interface is responsible for interacting with Citrix ADC via nitro rest API. It maintains the nitro session and invokes it when required. 
 #### K8s Interface
