@@ -9,13 +9,6 @@ go:
 services:
   - docker
 
-env:
-  global:
-    - NS_IP=citrix.node.controller.com
-    - NS_VTEP_MAC=aa:aa:aa:aa:aa
-    - NS_LOGIN=admin
-    - NS_PASSWORD=test
-      
 
 before_script: cd build
 jobs:
@@ -23,9 +16,6 @@ jobs:
     - stage: Build Citrix Node Controller
       script:
         - make build
-    - stage: 
+    - stage: Publish Citrix Node Controller 
       script:
-        - make test
-    #- stage: Unit Test Citrix Node COntroller
-    #  script:
-    #    - make test
+        - make publish
