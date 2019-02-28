@@ -1,6 +1,4 @@
-# **Citrix Node Controller**
-Citrix Node Controller creates network reachability between kubernetes cluster and Ingress device.
-## **Install Citrix Node Controller**
+# **Install Citrix Node Controller**
 
  1. Download the "citrix-k8s-node-controller.yaml" from the deployment Directory.
     ```
@@ -15,7 +13,7 @@ Citrix Node Controller creates network reachability between kubernetes cluster a
     * Citrix Node Controller
    
     First three are required for citrix Node controller to monitor k8s events. No changes required.
-    Next section defines environment variables required for Citrix Node Controller to configure the NetScaler.
+    Next section defines environment variables required for Citrix Node Controller to configure the Citrix ADC.
 
  2. Update the following env variables, for Citrix Node Controller bringup.
 
