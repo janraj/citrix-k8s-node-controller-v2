@@ -28,7 +28,7 @@ jobs:
         - kubectl cluster-info
         - echo $HOME
         - export KUBECONFIG=$HOME/.kube/config
-        - cat $HOME/.kube/config
+        - sudo cat $HOME/.kube/config
     
     - stage: Build Citrix Node Controller
       script:
