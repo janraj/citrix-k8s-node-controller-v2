@@ -21,6 +21,7 @@ before_script:
 jobs:
   include:
     - stage: Create kubernetes cluster 
+      script:
         - kubectl cluster-info
     
     - stage: Build Citrix Node Controller
