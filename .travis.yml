@@ -30,7 +30,10 @@ jobs:
         - kind create cluster
 
         - export KUBECONFIG="$(kind get kubeconfig-path)"
-        
+
+        - cd build
+        - sudo cat $HOME/.kube/config
+
       script: make test
     - stage: Build Citrix Node Controller
       script:
