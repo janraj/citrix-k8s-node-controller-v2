@@ -22,7 +22,7 @@ import (
 )
 
 var (
-      kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config",)
+      kubeconfig = filepath.Join(sudo, os.Getenv("HOME"), ".kube", "config",)
       config *restclient.Config = nil
       err error = nil
 )
