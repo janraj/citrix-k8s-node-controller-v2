@@ -32,3 +32,6 @@ jobs:
     - stage: Publish Citrix Node Controller 
       script:
         - make publish
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
