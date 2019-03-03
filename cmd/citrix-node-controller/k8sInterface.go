@@ -23,10 +23,11 @@ import (
 )
 
 var (
-	kubeconfig  = filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	config     *restclient.Config 
-	err        error 
+	kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	config     *restclient.Config
+	err        error
 )
+
 //This is interface for Kubernetes API Server
 type KubernetesAPIServer struct {
 	Suffix string
@@ -159,15 +160,15 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	//select {}
 
 	/*
-	        _, nodecontroller := cache.NewInformer(nodeListWatcher, &v1.Node{}, 0, cache.ResourceEventHandlerFuncs{
-			AddFunc: CoreHandler(obj interface{}, k8sclient, ingress_device_client, input_data),
-		    },
-	        )
-		stop := make(chan struct{})
-		defer close(stop)
-		go nodecontroller.Run(stop)
+		        _, nodecontroller := cache.NewInformer(nodeListWatcher, &v1.Node{}, 0, cache.ResourceEventHandlerFuncs{
+				AddFunc: CoreHandler(obj interface{}, k8sclient, ingress_device_client, input_data),
+			    },
+		        )
+			stop := make(chan struct{})
+			defer close(stop)
+			go nodecontroller.Run(stop)
 
-		select {}
+			select {}
 	*/
 }
 func NewController(queue workqueue.RateLimitingInterface, indexer cache.Indexer, informer cache.Controller) *Controller {
@@ -234,9 +235,9 @@ func (c *Controller) processNextItem() bool {
 //TODO: Make it independent of CNI
 func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
 	originalObjJS, err := json.Marshal(obj)
-        if (err != nil) {
+	if err != nil {
 		klog.Errorf("Failed to Marshal original object: %v", err)
-        }
+	}
 	var originalNode v1.Node
 	if err = json.Unmarshal(originalObjJS, &originalNode); err != nil {
 		klog.Errorf("Failed to unmarshal original object: %v", err)
