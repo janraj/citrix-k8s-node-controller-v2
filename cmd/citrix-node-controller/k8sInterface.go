@@ -23,11 +23,11 @@ import (
 )
 
 var (
-	kubeconfig                    = filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	config     *restclient.Config = nil
-	err        error              = nil
+	kubeconfig  = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	config     *restclient.Config 
+	err        error 
 )
-
+//This is interface for Kubernetes API Server
 type KubernetesAPIServer struct {
 	Suffix string
 	Client kubernetes.Interface
@@ -231,19 +231,22 @@ func (c *Controller) processNextItem() bool {
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
-//TODO: Make it independant of CNI
+//TODO: Make it independent of CNI
 func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
 	originalObjJS, err := json.Marshal(obj)
+        if (err != nil) {
+		klog.Errorf("Failed to Marshal original object: %v", err)
+        }
 	var originalNode v1.Node
 	if err = json.Unmarshal(originalObjJS, &originalNode); err != nil {
 		klog.Errorf("Failed to unmarshal original object: %v", err)
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
-	split_string := strings.Split(PodCIDR, "/")
-	address, masklen := split_string[0], split_string[1]
-	backend_data := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
-	vtep_mac := make(map[string]string)
-	err = json.Unmarshal(backend_data, &vtep_mac)
+	splitString := strings.Split(PodCIDR, "/")
+	address, masklen := splitString[0], split_string[1]
+	backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
+	vtepMac := make(map[string]string)
+	err = json.Unmarshal(backendData, &vtepMac)
 	if err != nil {
 		fmt.Println("Error")
 	}

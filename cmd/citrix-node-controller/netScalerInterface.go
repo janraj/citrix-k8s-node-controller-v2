@@ -83,7 +83,9 @@ func (c *NitroClient) createHTTPRequest(method string, url string, buff *bytes.B
 }
 func (c *NitroClient) doHTTPRequest(method string, url string, bytes *bytes.Buffer, respHandler responseHandlerFunc) ([]byte, error) {
 	req, err := c.createHTTPRequest(method, url, bytes)
-
+	if err != nil {
+		return []byte{}, err
+	}
 	resp, err := c.client.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
@@ -108,6 +110,9 @@ func (c *NitroClient) AddResource(resourceType string, name string, resourceStru
 	nsResource[resourceType] = resourceStruct
 
 	resourceJSON, err := JSONMarshal(nsResource)
+	if err != nil {
+		return "", fmt.Errorf("[ERROR] go-nitro: Failed to create resource of type %s, name=%s, err=%s", resourceType, name, err)
+	}
 
 	log.Printf("[TRACE] go-nitro: Resourcejson is " + string(resourceJSON))
 

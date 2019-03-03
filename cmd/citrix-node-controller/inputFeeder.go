@@ -65,7 +65,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
 	if len(InputDataBuff.ClusterCNI) == 0 {
-		klog.Info("Cluster CNI infomation is Empty")
+		klog.Info("Cluster CNI information is Empty")
 	}
 	InputDataBuff.DummyNodeLabel = "citrixadc"
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(os.Getenv("NS_VXLAN_ID"))
