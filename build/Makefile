@@ -17,7 +17,7 @@ publish: repo-login publish
 repo-login:
 	@docker login -u "$(QUAY_USERNAME)" -p "$(QUAY_PASSWORD)" quay.io
 
-publish-latest:
+publish:
 	@echo 'publish latest to $(DOCKER_REGISTRY)'
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
 	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
