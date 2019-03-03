@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/janraj/citrix-k8s-node-controller.svg?token=GfEuWKxn7TJJesWboygR&branch=master)](https://travis-ci.com/janraj/citrix-k8s-node-controller)
+
 # **Citrix-k8s-node-controller**
 Citrix Node Controller (CNC) is a micro service which creates the network between cluster and ingress device.  Citrix node controller can run inside the cluster as a pod or outside the cluster. In case of outside the cluster, it requires a proper Kube config file to run successfully. <span style="color:red">**Citrix Node Controller currently works only with flannel as CNI. The scope of Citrix node controller can be extended to other CNI.**</span>
 
