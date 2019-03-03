@@ -24,7 +24,7 @@ type ControllerInput struct {
 	IngressDeviceVtepMAC  string
 	IngressDeviceUsername string
 	IngressDevicePassword string
-	IngressDeviceUrl      string
+	IngressDeviceVtepIP  string
 	IngressDeviceVxlanID  int
 	ClusterCNI            string
 	ClusterCNIPort        int
@@ -55,13 +55,14 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Error("Ingress Device PASSWORD is  required")
 		configError = 1
 	}
+	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_SNIP")
+	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
+		klog.Info("Ingress Device VTEP IP is empty")
+		configError = 1
+	}
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
 		panic("Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
-	}
-	InputDataBuff.IngressDeviceUrl = os.Getenv("NS_URL")
-	if len(InputDataBuff.IngressDeviceUrl) == 0 {
-		klog.Info("Ingress Device URL is empty")
 	}
 	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
 	if len(InputDataBuff.ClusterCNI) == 0 {
@@ -76,7 +77,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
 	if InputDataBuff.ClusterCNIPort == 0 {
 		klog.Info("K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
-		InputDataBuff.IngressDeviceVxlanID = 8472
+		InputDataBuff.ClusterCNIPort = 8472
 	}
 	return &InputDataBuff
 }

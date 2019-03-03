@@ -30,7 +30,7 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 }
 func NewNitroClient(obj *ControllerInput) *NitroClient {
 	c := new(NitroClient)
-	c.url = "http://" + strings.Trim(obj.IngressDeviceUrl, " /") + "/nitro/v1/config/"
+	c.url = "http://" + strings.Trim(obj.IngressDeviceIP, " /") + "/nitro/v1/config/"
 	c.username = obj.IngressDeviceUsername
 	c.password = obj.IngressDevicePassword
 	c.client = &http.Client{}

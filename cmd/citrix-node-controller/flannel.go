@@ -30,7 +30,7 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 	NewNode.Annotations = make(map[string]string)
 	NewNode.Annotations["flannel.alpha.coreos.com/kube-subnet-manager"] = "true"
 	NewNode.Annotations["flannel.alpha.coreos.com/backend-type"] = "vxlan"
-	NewNode.Annotations["flannel.alpha.coreos.com/public-ip"] = obj.IngressDeviceIP
+	NewNode.Annotations["flannel.alpha.coreos.com/public-ip"] = obj.IngressDeviceVtepIP
 	NewNode.Annotations["flannel.alpha.coreos.com/backend-data"] = backend_data
 	return NewNode
 }
@@ -91,10 +91,10 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	configPack.Set("vxlan", &vxlan)
 	vxlanbind := Vxlan_srcip_binding{
 		Id:    controllerInput.IngressDeviceVxlanID,
-		Srcip: controllerInput.IngressDeviceIP,
+		Srcip: controllerInput.IngressDeviceVtepIP,
 	}
 	configPack.Set("vxlan_srcip_binding", &vxlanbind)
-
+   
 	nsip := Nsip{
 		Ipaddress: node.PodAddress,
 		Netmask:   node.PodNetMask,
