@@ -25,6 +25,10 @@ jobs:
       script: 
         - make test
 
+    - stage: Code Coverage of Citrix Node Controller
+      script: 
+        - make coverage
+
     - stage: Build Citrix Node Controller
       script:
         - make build
