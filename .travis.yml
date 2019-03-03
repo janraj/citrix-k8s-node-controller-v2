@@ -28,6 +28,7 @@ jobs:
     - stage: Code Coverage of Citrix Node Controller
       script: 
         - make coverage
+        - bash <(curl -s https://codecov.io/bash)
 
     - stage: Build Citrix Node Controller
       script:
@@ -37,5 +38,3 @@ jobs:
       script:
         - make publish
 
-after_success:
-    - bash <(curl -s https://codecov.io/bash)
