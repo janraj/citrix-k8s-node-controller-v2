@@ -59,13 +59,3 @@ func TestConfigDecider(t *testing.T){
         IngressDeviceClient := createIngressDeviceClient(ControllerInputObj)
 	ConfigDecider(api, IngressDeviceClient, ControllerInputObj) 
 }
-func TestCreateK8sApiserverClient(t *testing.T){
-	client, err := CreateK8sApiserverClient()
-	if client == nil{
-		t.Error("Expected valid K8s Client")
-	}
-	if err != nil{
-		t.Error("Expected valid K8s Client without error\n client=", client, "error=", err)
-	}
-		
-}
