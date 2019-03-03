@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
+	"k8s.io/klog"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"github.com/gorilla/mux"
-        "k8s.io/klog"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func waitForShutdown(srv *http.Server) {
 	os.Exit(0)
 }
 
-func StartRestServer(){
+func StartRestServer() {
 	// Create Server and Route Handlers
 	r := mux.NewRouter()
 	r.HandleFunc("/", handler)
@@ -69,7 +69,6 @@ func StartRestServer(){
 		WriteTimeout: 10 * time.Second,
 	}
 
-
 	// Start Server
 	go func() {
 		klog.Info("Starting Server")
@@ -80,6 +79,3 @@ func StartRestServer(){
 	// Graceful Shutdown
 	waitForShutdown(srv)
 }
-
-
-
