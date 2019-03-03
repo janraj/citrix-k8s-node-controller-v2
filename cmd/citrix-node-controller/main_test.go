@@ -5,5 +5,8 @@ import (
        )
 
 func TestMain(t *testing.T) {
-	InitCitrixNodeController()
+	error := InitCitrixNodeController()
+	if (error != nil){
+		t.Error("Expected non error case")		
+        }
 }

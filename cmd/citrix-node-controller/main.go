@@ -3,9 +3,10 @@ package main
 import (
 	"k8s.io/klog"
 )
-func  InitCitrixNodeController (){
+func  InitCitrixNodeController ()(error){
 	klog.InitFlags(nil)
 	klog.Info("Initializing CNC")
+        return nil
 }
 func StartCitrixNodeController(){
         controllerInput := FetchCitrixNodeControllerInput()

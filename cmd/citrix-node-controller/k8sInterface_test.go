@@ -52,13 +52,12 @@ func TestConfigDecider(t *testing.T){
 	 _, filename, _, _ := runtime.Caller(0)
     		fmt.Println("Current test filename: " + filename)
         ControllerInputObj := FetchCitrixNodeControllerInput()
-        k8sclient, err := CreateK8sApiserverClient()
+        nsobj, api := getClientAndDeviceInfo()
         if err != nil {
-                klog.Fatal("K8s Client Error", err)
+                klog.Fatal("K8s Client Error", err, nsobj)
 	}
         IngressDeviceClient := createIngressDeviceClient(ControllerInputObj)
-	
-	ConfigDecider(k8sclient, IngressDeviceClient, ControllerInputObj) 
+	ConfigDecider(api, IngressDeviceClient, ControllerInputObj) 
 }
 func TestCreateK8sApiserverClient(t *testing.T){
 	client, err := CreateK8sApiserverClient()

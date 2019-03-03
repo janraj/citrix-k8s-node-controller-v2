@@ -1,9 +1,12 @@
+OWNER=janrajc
+IMAGE_NAME=citrix-k8s-node-controller
+
 .PHONY: build
 build:
-	docker build -f Dockerfile -t citrix-k8s-node-controller .. -m 4g
-	docker save -o citrix-k8s-node-controller.tar citrix-k8s-node-controller
+	docker build -f Dockerfile -t $(IMAGE_NAME) .. -m 4g
+	docker save -o $(IMAGE_NAME).tar $(IMAGE_NAME)
 test:
-	 go test ../... -coverprofile cp.out 
+	 go test -v ../... -coverprofile cp.out 
 	 go tool cover -html=cp.out -o cover.html
 
 publish: repo-login publish
@@ -13,8 +16,8 @@ repo-login:
 
 publish-latest:
 	@echo 'publish latest to $(DOCKER_REGISTRY)'
-	docker tag citrix-k8s-node-controller:latest $(DOCKER_REGISTRY)/citrix-k8s-node-controller:latest
-	docker push $(DOCKER_REGISTRY)/citrix-k8s-node-controller:latest
+	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
+	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
 
 clean:
 	docker rmi -f $$(docker images -q -f dangling=true) || true

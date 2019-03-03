@@ -40,14 +40,16 @@ func InitializeNode(obj *ControllerInput) (*v1.Node) {
 *   Descr   :  This API  Creates a Dummy Node on K8s CLuster.					* 
 *************************************************************************************************
 */
-func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) (){
+func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) (*v1.Node){
 	klog.Info("Creating Citrix ADC Node")
 	NsAsDummyNode:=InitializeNode(obj)
-	res, err := api.Client.CoreV1().Nodes().Create(NsAsDummyNode)
+	node, err := api.Client.CoreV1().Nodes().Create(NsAsDummyNode)
 	if err != nil {
 		klog.Error("Node Creation has failed", err)
+                return node
 	}
-        klog.Info("Created Citrix ADC Node \n", res, res.GetObjectMeta().GetName())
+        klog.Info("Created Citrix ADC Node \n", node, node.GetObjectMeta().GetName())
+        return node
 }
 
 /*
