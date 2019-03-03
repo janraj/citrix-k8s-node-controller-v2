@@ -244,7 +244,7 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
 	splitString := strings.Split(PodCIDR, "/")
-	address, masklen := splitString[0], split_string[1]
+	address, masklen := splitString[0], splitString[1]
 	backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
 	vtepMac := make(map[string]string)
 	err = json.Unmarshal(backendData, &vtepMac)
@@ -254,7 +254,7 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 	node := new(Node)
 	node.HostName = "janraj"
 	node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
-	node.PodVTEP = vtep_mac["VtepMAC"]
+	node.PodVTEP = vtepMac["VtepMAC"]
 	node.PodAddress = address
 	node.PodNetMask = ConvertPrefixLenToMask(masklen)
 	node.PodMaskLen = masklen
