@@ -12,7 +12,8 @@ type Node struct {
 	PodCIDR    string `json:"podcidr,omitempty"`
 	PodVTEP    string `json:"podvtep,omitempty"`
 	PodNetMask string `json:"podcidr,omitempty"`
-	PodAddress string `json:"address,omitempty"`
+	PodAddress string `json:"podaddress,omitempty"`
+	NextPodAddress string `json:"nextpodaddress,omitempty"`
 	PodMaskLen string `json:"prefix, omitempty"`
 	Type       string `json:"podvtep,omitempty"`
 	VxlanPort  string `json:"prefix, omitempty"`
@@ -57,7 +58,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_SNIP")
 	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
-		klog.Info("Ingress Device VTEP IP is empty")
+		klog.Info("Ingress Device VTEP IP (SNIP)  is empty")
 		configError = 1
 	}
 	if configError == 1 {

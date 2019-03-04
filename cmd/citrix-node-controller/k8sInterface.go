@@ -224,6 +224,22 @@ func (c *Controller) processNextItem() bool {
 
 /*
 *************************************************************************************************
+*   APIName :  Generate Next PodCIRIP                                                           *
+*   Input   :  Podaddrd in dotted decimal notation. 						*
+*   Output  :  Return Net Mask in dotted decimal.	                                        *
+*   Descr   :  This API takes Prefix length and generate coresponding dotted Decimal            *
+*	       notation of net mask						  		*
+*************************************************************************************************
+ */
+func GenerateNextPodAddr(PodAddr string) string {
+	oct := strings.Split(PodAddr, ".")
+	oct3, _ := strconv.Atoi(oct[3])
+	oct3 = oct3 + 1
+	nextaddr := fmt.Sprintf("%s.%s.%s.%d", oct[0], oct[1], oct[2], oct3)
+	return nextaddr
+}
+/*
+*************************************************************************************************
 *   APIName :  ParseNodeEvents                                                                *
 *   Input   :  Takes Node object, IngressDeviceObject and InputData.             		*
 *   Output  :  Every node addition, it creates a Route entry in Ingress Device.	                *
@@ -252,10 +268,11 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		fmt.Println("Error")
 	}
 	node := new(Node)
-	node.HostName = "janraj"
+	node.HostName = "Citrix"
 	node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
 	node.PodVTEP = vtepMac["VtepMAC"]
 	node.PodAddress = address
+	node.NextPodAddress = GenerateNextPodAddr(address) 
 	node.PodNetMask = ConvertPrefixLenToMask(masklen)
 	node.PodMaskLen = masklen
 	node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]

@@ -96,7 +96,7 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	configPack.Set("vxlan_srcip_binding", &vxlanbind)
    
 	nsip := Nsip{
-		Ipaddress: node.PodAddress,
+		Ipaddress: node.NextPodAddress,
 		Netmask:   node.PodNetMask,
 	}
 	configPack.Set("nsip", &nsip)
