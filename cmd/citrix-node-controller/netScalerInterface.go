@@ -256,7 +256,7 @@ func NsInterfaceAddRoute(client *NitroClient, input *ControllerInput, node *Node
 	arp := Arp{
 		Ipaddress: node.PodAddress,
 		Mac:       node.PodVTEP,
-		Vxlan:     node.VxlanPort,
+		Vxlan:     input.IngressDeviceVxlanID,
 		Vtep:      node.IPAddr,
 	}
 	configPack.Set("arp", &arp)
