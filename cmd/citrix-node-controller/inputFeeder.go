@@ -27,6 +27,7 @@ type ControllerInput struct {
 	IngressDevicePassword string
 	IngressDeviceVtepIP  string
 	IngressDeviceVxlanID  int
+	IngressDeviceVxlanIDs  string
 	ClusterCNI            string
 	ClusterCNIPort        int
 	DummyNodeLabel        string
@@ -70,10 +71,12 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Info("Cluster CNI information is Empty")
 	}
 	InputDataBuff.DummyNodeLabel = "citrixadc"
-	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(os.Getenv("NS_VXLAN_ID"))
+        InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
+	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
 	if InputDataBuff.IngressDeviceVxlanID == 0 {
 		klog.Info("VXLAN ID has Not Given, taking 5000 as default VXLAN_ID")
 		InputDataBuff.IngressDeviceVxlanID = 5000
+		InputDataBuff.IngressDeviceVxlanIDs = "5000"
 	}
 	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
 	if InputDataBuff.ClusterCNIPort == 0 {
