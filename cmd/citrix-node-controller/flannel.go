@@ -70,7 +70,7 @@ func (api KubernetesAPIServer) GetDummyNode(obj *ControllerInput) *v1.Node {
 	if err != nil {
 		return nil
 	}
-	klog.Info("Get Node \n", node, node.GetObjectMeta().GetName())
+	klog.Info("[INFO] Get Node: Node Name:", node.GetObjectMeta().GetName())
 	return node
 }
 

@@ -184,7 +184,7 @@ func NewController(queue workqueue.RateLimitingInterface, indexer cache.Indexer,
 	}
 }
 func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
-	klog.Info("JANRAJ RUN FUNC: Starting Node controller")
+	klog.Info("RUN FUNC: Starting Node controller")
 	defer uruntime.HandleCrash()
 
 	// Let the workers stop when we are done
@@ -209,7 +209,7 @@ func (c *Controller) runWorker() {
 func (c *Controller) processNextItem() bool {
 	// Wait until there is a new item in the working queue
 	upd, quit := c.queue.Get()
-	klog.Info("JANRAJ Data is ", upd)
+	klog.Info(" Data is ", upd)
 	if quit {
 		return false
 	}
@@ -248,16 +248,38 @@ func GenerateNextPodAddr(PodAddr string) string{
 }
 /*
 *************************************************************************************************
-*   APIName :  ParseNodeEvents                                                                *
-*   Input   :  Takes Node object, IngressDeviceObject and InputData.             		*
-*   Output  :  Every node addition, it creates a Route entry in Ingress Device.	                *
-*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
-*            events and store in node cache. Based on the events type, call back functions      *
-*	     Will execute and perform the desired tasks.					*
+*   APIName :  GetNodeAddress                                           	                *
+*   Input   :  Takes Node object.					             		*
+*   Output  :  Return Internal IP, External IP and Hostname.					*
+*   Descr   :  This API Gets the Address info of the Node if present 				*
 *************************************************************************************************
  */
-//TODO: Make it independent of CNI
+func GetNodeAddress(node v1.Node) (string, string, string){
+        var InternalIP, ExternalIP, HostName string
+        for _, addr := range node.Status.Addresses {
+		if (addr.Type == "InternalIP"){
+			InternalIP = addr.Address
+        		klog.Info("[INFO] Internal IP of Node", InternalIP)
+		}else if (addr.Type == "Hostname"){
+			HostName = addr.Address
+        		klog.Info("[INFO] Host Name of Node", HostName)
+		}else if (addr.Type == "ExternalIP"){
+			ExternalIP = addr.Address
+        		klog.Info("[INFO] External IP  of Node", ExternalIP)
+		}
+	}
+	return InternalIP, ExternalIP, HostName
+}
+/*
+*************************************************************************************************
+*   APIName :  ParseNodeEvents                                                                  *
+*   Input   :  Takes Node object, IngressDeviceObject and InputData.             		*
+*   Output  :  Return Node Object.						                *
+*   Descr   :  This API  Parses the object and prepare node object. 				*
+*************************************************************************************************
+ */
 func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
+	node := new(Node)
 	originalObjJS, err := json.Marshal(obj)
 	if err != nil {
 		klog.Errorf("Failed to Marshal original object: %v", err)
@@ -267,6 +289,10 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		klog.Errorf("Failed to unmarshal original object: %v", err)
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
+        InternalIP, ExternalIP, HostName := GetNodeAddress(originalNode)
+	node.IPAddr = InternalIP
+        node.HostName = HostName
+        node.ExternalIPAddr = ExternalIP
         if (PodCIDR != ""){
 		klog.Infof("[INFO] PodCIDR Information is Present: NodeInfo=%v\n PodiCIDR=%v", originalNode, PodCIDR)
 		splitString := strings.Split(PodCIDR, "/")
@@ -277,9 +303,12 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		if err != nil {
 			fmt.Println("Error")
 		}
-		node := new(Node)
-		node.HostName = "Citrix"
-		node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
+		if (node.HostName != ""){
+			node.HostName = "Citrix"
+		}
+		if (node.IPAddr != ""){
+			node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
+		}
 		node.PodVTEP = vtepMac["VtepMAC"]
 		node.PodAddress = address
 		NextPodAddress := GenerateNextPodAddr(address)
@@ -293,11 +322,10 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
 		ControllerInputObj.NodesInfo = make(map[string]*Node)
 		ControllerInputObj.NodesInfo[node.IPAddr] = node
-		return node
 	}else{
 		klog.Errorf("[WARNING] Does not have PodCIDR Information: NodeInfo=%v", originalNode)
 	} 
-	return nil
+	return node
 }
 
 /*

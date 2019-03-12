@@ -9,6 +9,7 @@ import (
 type Node struct {
 	HostName   string `json:"hostname,omitempty"`
 	IPAddr     string `json:"address,omitempty"`
+	ExternalIPAddr     string `json:"address,omitempty"`
 	PodCIDR    string `json:"podcidr,omitempty"`
 	PodVTEP    string `json:"podvtep,omitempty"`
 	PodNetMask string `json:"podcidr,omitempty"`
