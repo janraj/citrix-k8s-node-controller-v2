@@ -26,6 +26,7 @@ type ControllerInput struct {
 	IngressDeviceUsername string
 	IngressDevicePassword string
 	IngressDeviceVtepIP  string
+	IngressDevicePodCIDR  string
 	IngressDeviceVxlanID  int
 	IngressDeviceVxlanIDs  string
 	ClusterCNI            string
@@ -39,48 +40,52 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.IngressDeviceIP = os.Getenv("NS_IP")
 	configError := 0
 	if len(InputDataBuff.IngressDeviceIP) == 0 {
-		klog.Error("Ingress Device IP is required")
+		klog.Error("[ERROR] Ingress Device IP (NS_IP) is required")
 		configError = 1
 	}
 	InputDataBuff.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
 	if len(InputDataBuff.IngressDeviceVtepMAC) == 0 {
-		klog.Error("Ingress Device VtepMAC is  required")
+		klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required")
 		configError = 1
 	}
 	InputDataBuff.IngressDeviceUsername = os.Getenv("NS_LOGIN")
 	if len(InputDataBuff.IngressDeviceUsername) == 0 {
-		klog.Error("Ingress Device USER_NAME is  required")
+		klog.Error("[ERROR] Ingress Device USER_NAME (NS_LOGIN) is  required")
 		configError = 1
 	}
 	InputDataBuff.IngressDevicePassword = os.Getenv("NS_PASSWORD")
 	if len(InputDataBuff.IngressDevicePassword) == 0 {
-		klog.Error("Ingress Device PASSWORD is  required")
+		klog.Error("[ERROR] Ingress Device PASSWORD (NS_PASSWORD) is  required")
 		configError = 1
 	}
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_SNIP")
 	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
-		klog.Info("Ingress Device VTEP IP (SNIP)  is empty")
+		klog.Info("[ERROR] Ingress Device VTEP IP (NS_SNIP)  is empty")
 		configError = 1
 	}
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
-		panic("Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
 	if len(InputDataBuff.ClusterCNI) == 0 {
-		klog.Info("Cluster CNI information is Empty")
+		klog.Infof("[INFO] Cluster CNI information is Empty")
+	}
+	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
+	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
+		klog.Infof("[INFO] IngressDevicePodCIDR is Empty")
 	}
 	InputDataBuff.DummyNodeLabel = "citrixadc"
         InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
 	if InputDataBuff.IngressDeviceVxlanID == 0 {
-		klog.Info("VXLAN ID has Not Given, taking 5000 as default VXLAN_ID")
+		klog.Info("[INFO] VXLAN ID has Not Given, taking 5000 as default VXLAN_ID")
 		InputDataBuff.IngressDeviceVxlanID = 5000
 		InputDataBuff.IngressDeviceVxlanIDs = "5000"
 	}
 	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
 	if InputDataBuff.ClusterCNIPort == 0 {
-		klog.Info("K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
+		klog.Info("[INFO] K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
 		InputDataBuff.ClusterCNIPort = 8472
 	}
 	return &InputDataBuff

@@ -77,20 +77,24 @@ func ConvertPrefixLenToMask(prefixLen string) string {
 *************************************************************************************************
  */
 func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
+	klog.Info("[INFO] Creating API Client")
 	api := &KubernetesAPIServer{}
 	config, err = clientcmd.BuildConfigFromFlags("", "")
 	if err != nil {
+	 	klog.Error("[WARNING] Citrix Node Controller Runs outside cluster")
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
+	 	        klog.Error("[ERROR] Did not find valid kube config info")
 			klog.Fatal(err)
 		}
 	}
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
+	 	klog.Error("[ERROR] Failed to establish connection")
 		klog.Fatal(err)
 	}
-	klog.Info("Kubernetes Client is created", client)
+	klog.Info("[INFO] Kubernetes Client is created", client)
 	api.Client = client
 	return api, nil
 }
@@ -225,15 +229,19 @@ func (c *Controller) processNextItem() bool {
 /*
 *************************************************************************************************
 *   APIName :  Generate Next PodCIRIP                                                           *
-*   Input   :  Podaddrd in dotted decimal notation. 						*
+*   Input   :  Podaddr in dotted decimal notation. 						*
 *   Output  :  Return Net Mask in dotted decimal.	                                        *
 *   Descr   :  This API takes Prefix length and generate coresponding dotted Decimal            *
 *	       notation of net mask						  		*
 *************************************************************************************************
  */
-func GenerateNextPodAddr(PodAddr string) string {
+func GenerateNextPodAddr(PodAddr string) string{
 	oct := strings.Split(PodAddr, ".")
 	oct3, _ := strconv.Atoi(oct[3])
+	if (oct3 >= 254) {
+		klog.Errorf("[ERROR] Cannot increment the last octect of the IP as it is 254")
+                return "Error"
+        }
 	oct3 = oct3 + 1
 	nextaddr := fmt.Sprintf("%s.%s.%s.%d", oct[0], oct[1], oct[2], oct3)
 	return nextaddr
@@ -259,26 +267,37 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		klog.Errorf("Failed to unmarshal original object: %v", err)
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
-	splitString := strings.Split(PodCIDR, "/")
-	address, masklen := splitString[0], splitString[1]
-	backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
-	vtepMac := make(map[string]string)
-	err = json.Unmarshal(backendData, &vtepMac)
-	if err != nil {
-		fmt.Println("Error")
-	}
-	node := new(Node)
-	node.HostName = "Citrix"
-	node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
-	node.PodVTEP = vtepMac["VtepMAC"]
-	node.PodAddress = address
-	node.NextPodAddress = GenerateNextPodAddr(address) 
-	node.PodNetMask = ConvertPrefixLenToMask(masklen)
-	node.PodMaskLen = masklen
-	node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
-	ControllerInputObj.NodesInfo = make(map[string]*Node)
-	ControllerInputObj.NodesInfo[node.IPAddr] = node
-	return node
+        if (PodCIDR != ""){
+		klog.Info("[INFO] PodCIDR Information is Present: NodeInfo=%v\n PodiCIDR=%s", originalNode, PodCIDR)
+		splitString := strings.Split(PodCIDR, "/")
+		address, masklen := splitString[0], splitString[1]
+		backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
+		vtepMac := make(map[string]string)
+		err = json.Unmarshal(backendData, &vtepMac)
+		if err != nil {
+			fmt.Println("Error")
+		}
+		node := new(Node)
+		node.HostName = "Citrix"
+		node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
+		node.PodVTEP = vtepMac["VtepMAC"]
+		node.PodAddress = address
+		NextPodAddress := GenerateNextPodAddr(address)
+		if (NextPodAddress != "Error"){
+			node.NextPodAddress = NextPodAddress
+		}else{
+			node.NextPodAddress = address
+		}
+		node.PodNetMask = ConvertPrefixLenToMask(masklen)
+		node.PodMaskLen = masklen
+		node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
+		ControllerInputObj.NodesInfo = make(map[string]*Node)
+		ControllerInputObj.NodesInfo[node.IPAddr] = node
+		return node
+	}else{
+		klog.Errorf("[WARNING] Does not have PodCIDR Information: NodeInfo=%v", originalNode)
+	} 
+	return nil
 }
 
 /*
@@ -335,6 +354,8 @@ func CoreUpdateHandler(obj interface{}, IngressDeviceClient *NitroClient, Contro
 *************************************************************************************************
  */
 func CoreHandler(obj interface{}, newobj interface{}, event string, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	//create a slice of ops
+
 	if event == "ADD" {
 		CoreAddHandler(obj, IngressDeviceClient, ControllerInputObj)
 	}
@@ -348,7 +369,7 @@ func CoreHandler(obj interface{}, newobj interface{}, event string, IngressDevic
 func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 	pods, err := api.Client.Core().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
-		klog.Error("Error in Pod Listing", err)
+		klog.Error("[ERROR] Error in Pod Listing", err)
 	}
 	for _, pod := range pods.Items {
 		if strings.Contains(pod.Name, "flannel") {
@@ -357,7 +378,9 @@ func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 			controllerInput.ClusterCNI = "Weave"
 		} else if strings.Contains(pod.Name, "calico") {
 			controllerInput.ClusterCNI = "Calico"
-		}
+		} else {
+			controllerInput.ClusterCNI = "Flannel"
+                }
 	}
 }
 func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
@@ -365,6 +388,6 @@ func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, control
 	if controllerInput.ClusterCNI == "Flannel" {
 		InitFlannel(api, ingressDevice, controllerInput)
 	} else {
-		klog.Info("Network Automation is not supported for other than Flannel")
+		klog.Info("[INFO] Network Automation is not supported for other than Flannel")
 	}
 }

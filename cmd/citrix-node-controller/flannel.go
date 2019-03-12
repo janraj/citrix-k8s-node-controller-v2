@@ -16,14 +16,15 @@ import (
 *************************************************************************************************
  */
 func InitializeNode(obj *ControllerInput) *v1.Node {
+	klog.Info("[INFO] Initializing a Dummy Node")
 	backend_data := fmt.Sprintf("{VtepMAC:%s}", obj.IngressDeviceVtepMAC)
 	NewNode := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixadc",
 		},
-		//Spec: v1.NodeSpec{
-		//        PodCIDR: obj.IngressDevicePodCIDR,
-		//},
+		Spec: v1.NodeSpec{
+		        PodCIDR: obj.IngressDevicePodCIDR,
+		},
 	}
 	NewNode.Labels = make(map[string]string)
 	NewNode.Labels["com.citrix.nodetype"] = obj.DummyNodeLabel
@@ -44,14 +45,14 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 *************************************************************************************************
  */
 func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) *v1.Node {
-	klog.Info("Creating Citrix ADC Node")
+	klog.Info("[INFO] Creating Citrix ADC Node")
 	NsAsDummyNode := InitializeNode(obj)
 	node, err := api.Client.CoreV1().Nodes().Create(NsAsDummyNode)
 	if err != nil {
-		klog.Error("Node Creation has failed", err)
+		klog.Error("[ERROR] Node Creation has failed", err)
 		return node
 	}
-	klog.Info("Created Citrix ADC Node \n", node, node.GetObjectMeta().GetName())
+	klog.Info("[INFO] Created Citrix ADC Node \n", node, node.GetObjectMeta().GetName())
 	return node
 }
 
@@ -112,10 +113,12 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 *************************************************************************************************
  */
 func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
+	klog.Info("[INFO] Initializing Flannel Config")
 	dummyNode := api.GetDummyNode(controllerInput)
 	ingressDevice.GetVxlanConfig(controllerInput)
 	if dummyNode == nil {
-		api.CreateDummyNode(controllerInput)
+		klog.Info("[INFO] Creating Citrix ADC node \n")
+		dummyNode = api.CreateDummyNode(controllerInput)
 	}
 	node := ParseNodeEvents(dummyNode, ingressDevice, controllerInput)
 	CreateVxlanConfig(ingressDevice, controllerInput, node)
