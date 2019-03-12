@@ -268,7 +268,7 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
         if (PodCIDR != ""){
-		klog.Info("[INFO] PodCIDR Information is Present: NodeInfo=%v\n PodiCIDR=%s", originalNode, PodCIDR)
+		klog.Info("[INFO] PodCIDR Information is Present: NodeInfo=%v\n PodiCIDR=%v", originalNode, PodCIDR)
 		splitString := strings.Split(PodCIDR, "/")
 		address, masklen := splitString[0], splitString[1]
 		backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
