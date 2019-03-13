@@ -345,8 +345,7 @@ func CoreAddHandler(obj interface{}, IngressDeviceClient *NitroClient, Controlle
 	node := ParseNodeEvents(obj, IngressDeviceClient, ControllerInputObj)
 	if (node.Label != "citrixadc"){
 		NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
-	}
-	else {
+	}else {
 		klog.Info("[INFO] Skipping Route addition for Dummy Node")
 	}
 }
