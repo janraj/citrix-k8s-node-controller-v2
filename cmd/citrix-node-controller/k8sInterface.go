@@ -94,7 +94,7 @@ func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 	 	klog.Error("[ERROR] Failed to establish connection")
 		klog.Fatal(err)
 	}
-	klog.Info("[INFO] Kubernetes Client is created", client)
+	klog.Info("[INFO] Kubernetes Client is created")
 	api.Client = client
 	return api, nil
 }
@@ -305,7 +305,7 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		vtepMac := make(map[string]string)
 		err = json.Unmarshal(backendData, &vtepMac)
 		if err != nil {
-			klog.Error("[ERROR] Issue with Json unmarshel")
+			klog.Error("[ERROR] Issue with Json unmarshel", err)
 		}
 		if (node.HostName != ""){
 			node.HostName = "Citrix"
