@@ -19,6 +19,7 @@ type Node struct {
 	Type       string `json:"podvtep,omitempty"`
 	VxlanPort  string `json:"prefix, omitempty"`
 	Count      int    `json:"count,omitempty"`
+	Label     string `json:"label,omitempty"`
 }
 
 type ControllerInput struct {
@@ -89,5 +90,6 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Info("[INFO] K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
 		InputDataBuff.ClusterCNIPort = 8472
 	}
+	InputDataBuff.NodesInfo = make(map[string]*Node)
 	return &InputDataBuff
 }

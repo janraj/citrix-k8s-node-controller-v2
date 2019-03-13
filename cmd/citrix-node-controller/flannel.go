@@ -22,9 +22,9 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixadc",
 		},
-		Spec: v1.NodeSpec{
-		        PodCIDR: obj.IngressDevicePodCIDR,
-		},
+		//Spec: v1.NodeSpec{
+		//        PodCIDR: obj.IngressDevicePodCIDR,
+		//},
 	}
 	NewNode.Labels = make(map[string]string)
 	NewNode.Labels["com.citrix.nodetype"] = obj.DummyNodeLabel
@@ -52,7 +52,7 @@ func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) *v1.Node {
 		klog.Error("[ERROR] Node Creation has failed", err)
 		return node
 	}
-	klog.Info("[INFO] Created Citrix ADC Node \n", node, node.GetObjectMeta().GetName())
+	klog.Info("[INFO] Created Citrix ADC Node of name=", node.GetObjectMeta().GetName())
 	return node
 }
 
@@ -118,8 +118,10 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
 	ingressDevice.GetVxlanConfig(controllerInput)
 	if dummyNode == nil {
 		klog.Info("[INFO] Creating Citrix ADC node \n")
-		dummyNode = api.CreateDummyNode(controllerInput)
+		api.CreateDummyNode(controllerInput)
+		dummyNode = api.GetDummyNode(controllerInput)
 	}
 	node := ParseNodeEvents(dummyNode, ingressDevice, controllerInput)
+	node.PodNetMask = "255.255.0.0" //Automate to find next highest number
 	CreateVxlanConfig(ingressDevice, controllerInput, node)
 }

@@ -282,11 +282,15 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 	node := new(Node)
 	originalObjJS, err := json.Marshal(obj)
 	if err != nil {
-		klog.Errorf("Failed to Marshal original object: %v", err)
+		klog.Errorf("[ERROR] Failed to Marshal original object: %v", err)
 	}
 	var originalNode v1.Node
 	if err = json.Unmarshal(originalObjJS, &originalNode); err != nil {
-		klog.Errorf("Failed to unmarshal original object: %v", err)
+		klog.Errorf("[ERROR] Failed to unmarshal original object: %v", err)
+	}
+	if (originalNode.Labels["com.citrix.nodetype"] == "citrixadc"){ 
+		node.Label = "citrixadc"
+		klog.Info("[INFO] Processing Citrix Dummy Node")
 	}
 	PodCIDR := originalNode.Spec.PodCIDR
         InternalIP, ExternalIP, HostName := GetNodeAddress(originalNode)
@@ -294,14 +298,14 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
         node.HostName = HostName
         node.ExternalIPAddr = ExternalIP
         if (PodCIDR != ""){
-		klog.Infof("[INFO] PodCIDR Information is Present: NodeInfo=%v\n PodiCIDR=%v", originalNode, PodCIDR)
+		klog.Infof("[INFO] PodCIDR Information is Present: PodiCIDR=%v", PodCIDR)
 		splitString := strings.Split(PodCIDR, "/")
 		address, masklen := splitString[0], splitString[1]
 		backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
 		vtepMac := make(map[string]string)
 		err = json.Unmarshal(backendData, &vtepMac)
 		if err != nil {
-			fmt.Println("Error")
+			klog.Error("[ERROR] Issue with Json unmarshel")
 		}
 		if (node.HostName != ""){
 			node.HostName = "Citrix"
@@ -320,10 +324,10 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		node.PodNetMask = ConvertPrefixLenToMask(masklen)
 		node.PodMaskLen = masklen
 		node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
-		ControllerInputObj.NodesInfo = make(map[string]*Node)
 		ControllerInputObj.NodesInfo[node.IPAddr] = node
 	}else{
-		klog.Errorf("[WARNING] Does not have PodCIDR Information: NodeInfo=%v", originalNode)
+		klog.Errorf("[WARNING] Does not have PodCIDR Information")
+		klog.Info("[INFO] Reading POD CIDR, MAC information from ConfigMap")
 	} 
 	return node
 }
@@ -339,7 +343,12 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
  */
 func CoreAddHandler(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	node := ParseNodeEvents(obj, IngressDeviceClient, ControllerInputObj)
-	NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+	if (node.Label != "citrixadc"){
+		NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+	}
+	else {
+		klog.Info("[INFO] Skipping Route addition for Dummy Node")
+	}
 }
 
 /*
