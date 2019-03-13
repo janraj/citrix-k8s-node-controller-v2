@@ -5,6 +5,7 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
+        "time"
 )
 
 /*
@@ -119,6 +120,7 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
 	if dummyNode == nil {
 		klog.Info("[INFO] Creating Citrix ADC node \n")
 		api.CreateDummyNode(controllerInput)
+                time.Sleep(60 * time.Second) //TODO, We have to wait till Node is available.
 		dummyNode = api.GetDummyNode(controllerInput)
 	}
 	node := ParseNodeEvents(dummyNode, ingressDevice, controllerInput)
