@@ -7,8 +7,6 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	uruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -19,7 +17,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var (
@@ -130,102 +127,8 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	go nodecontroller.Run(stop)
 
 	select {}
-	nodequeue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	fmt.Println("Citrix Node Watcher")
-	indexer, informer := cache.NewIndexerInformer(nodeListWatcher, &v1.Node{}, 0, cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
-				fmt.Println("Add ", obj)
-				nodequeue.Add(QueueUpdate{key, false})
-			}
-		},
-		UpdateFunc: func(old interface{}, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				nodequeue.Add(QueueUpdate{key, false})
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-			if err == nil {
-				nodequeue.Add(QueueUpdate{key, false})
-			}
-		},
-	}, cache.Indexers{})
 
-	controller := NewController(nodequeue, indexer, informer)
-
-	fmt.Println("Starting Citrix Node controller")
-	stop = make(chan struct{})
-	defer close(stop)
-	go controller.Run(5, stop)
-
-	//select {}
-
-	/*
-		        _, nodecontroller := cache.NewInformer(nodeListWatcher, &v1.Node{}, 0, cache.ResourceEventHandlerFuncs{
-				AddFunc: CoreHandler(obj interface{}, k8sclient, ingress_device_client, input_data),
-			    },
-		        )
-			stop := make(chan struct{})
-			defer close(stop)
-			go nodecontroller.Run(stop)
-
-			select {}
-	*/
 }
-func NewController(queue workqueue.RateLimitingInterface, indexer cache.Indexer, informer cache.Controller) *Controller {
-
-	return &Controller{
-		informer: informer,
-		indexer:  indexer,
-		queue:    queue,
-	}
-}
-func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
-	klog.Info("RUN FUNC: Starting Node controller")
-	defer uruntime.HandleCrash()
-
-	// Let the workers stop when we are done
-	defer c.queue.ShutDown()
-	//g
-
-	go c.informer.Run(stopCh)
-
-	// Start a number of worker threads to read from the queue.
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
-	}
-
-	<-stopCh
-	klog.Info("Stopping Node controller")
-	//glog.Info("Stopping Node controller")
-}
-func (c *Controller) runWorker() {
-	for c.processNextItem() {
-	}
-}
-func (c *Controller) processNextItem() bool {
-	// Wait until there is a new item in the working queue
-	upd, quit := c.queue.Get()
-	klog.Info(" Data is ", upd)
-	if quit {
-		return false
-	}
-	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
-	// This allows safe parallel processing because two nodes with the same key are never processed in
-	// parallel.
-	defer c.queue.Done(upd)
-
-	// Invoke the method containing the business logic
-	//err := c.syncToCalico(upd.(QueueUpdate))
-
-	// Handle the error if something went wrong during the execution of the business logic
-	//c.handleErr(err, upd)
-	return true
-}
-
 /*
 *************************************************************************************************
 *   APIName :  Generate Next PodCIRIP                                                           *

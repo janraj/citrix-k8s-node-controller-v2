@@ -78,14 +78,24 @@ func TestGenerateNextPodAddr(t *testing.T) {
 		t.Error("Expected Error, got ", nextIP)
 	}
 }
+func TestCreateK8sApiserverClient(t *testing.T){
+	CreateK8sApiserverClient()
+}
 /*
+func TestCitrixNodeWatcher(t *testing.T){
+	
+	controllerInput, api := getClientAndDeviceInfo()
+	ingressDevice := createIngressDeviceClient(controllerInput)
+	CitrixNodeWatcher(api, ingressDevice, controllerInput)
+}*/
+
 func TestCoreHandler(t *testing.T){
-	controllerInput := FetchCitrixNodeControllerInput()
+	controllerInput, api := getClientAndDeviceInfo()
 	ingressDevice := createIngressDeviceClient(controllerInput)
 
 	event := "ADD"
-	obj := "None"	
-	newobj := "None"	
+	obj := api.GetDummyNode(controllerInput)	
+	newobj := api.GetDummyNode(controllerInput)	
 	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
 	event = "ADD"	
 	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
@@ -104,4 +114,3 @@ func TestCoreHandler(t *testing.T){
 	event = "UPDATE"	
 	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
 }
-*/
