@@ -73,13 +73,13 @@ spec:
         image: "quay.io/citrix/citrix-k8s-node-controller:latest"
         imagePullPolicy: IfNotPresent
         env:
-        - name: NS_URL
+        - name: NS_IP
           value: "xxxxxxx"
         - name: NS_LOGIN
           value: "xxxxx"
         - name: NS_PASSWORD
           value: "xxxxx"
-        - name: NS_IP
+        - name: NS_SNIP
           value: "xxx.xxx.xxx.xxx"
         - name: NS_VTEP_MAC
           value: "xx:xx:xx:xx:xx:xx"
