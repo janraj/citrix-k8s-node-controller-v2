@@ -79,7 +79,16 @@ func TestGenerateNextPodAddr(t *testing.T) {
 	}
 }
 func TestCreateK8sApiserverClient(t *testing.T){
-	CreateK8sApiserverClient()
+	func() {
+                defer func() {
+                        if r := recover(); r == nil {
+                                t.Errorf("CreateK8sApiserverClient Input should have panicked!")
+                        }
+                }()
+                // This function should cause a panic
+		CreateK8sApiserverClient()
+        }()
+
 }
 /*
 func TestCitrixNodeWatcher(t *testing.T){
