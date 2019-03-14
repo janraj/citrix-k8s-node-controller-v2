@@ -45,7 +45,13 @@ func TestInitializeNode(t *testing.T) {
 }
 func TestCreateDummyNode(t *testing.T) {
 	nsObj, api := getClientAndDeviceInfo()
-	api.CreateDummyNode(nsObj)
+	node := api.CreateDummyNode(nsObj)
+	if (node != nil){
+		node := api.CreateDummyNode(nsObj)
+		if (node != nil) {
+			t.Error("Expected node creation failed")
+		}
+	}
 }
 func TestInitFlannel(t *testing.T) {
 	nsObj, api := getClientAndDeviceInfo()

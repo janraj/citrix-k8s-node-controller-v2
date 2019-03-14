@@ -77,10 +77,10 @@ func (api KubernetesAPIServer) GetDummyNode(obj *ControllerInput) *v1.Node {
 
 /*
 *************************************************************************************************
-*   APIName :  vxlanConfig	                                                                *
-*   Input   :  Takes ingress Device session.		             			        *
-*   Output  :  Node Object if it present else retun Nil.				        *
-*   Descr   :  This API  Get the Citrix Adc node if its present in the Cluster.			*
+*   APIName :  CreateVxlanConfig	                                                        *
+*   Input   :  Takes ingress Device session, controller input and node.		             	*
+*   Output  :  Create Config Pack for VXLAM.				        		*
+*   Descr   :  This API  calls if the CNI is flannel and it creates a VXLAN COnfig for that.	*
 *************************************************************************************************
  */
 func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
