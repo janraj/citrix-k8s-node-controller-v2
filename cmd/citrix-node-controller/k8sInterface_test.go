@@ -78,6 +78,7 @@ func TestGenerateNextPodAddr(t *testing.T) {
 		t.Error("Expected Error, got ", nextIP)
 	}
 }
+/*
 func TestCreateK8sApiserverClient(t *testing.T){
 	func() {
                 defer func() {
@@ -90,7 +91,6 @@ func TestCreateK8sApiserverClient(t *testing.T){
         }()
 
 }
-/*
 func TestCitrixNodeWatcher(t *testing.T){
 	
 	controllerInput, api := getClientAndDeviceInfo()
