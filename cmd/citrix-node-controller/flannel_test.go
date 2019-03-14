@@ -47,3 +47,8 @@ func TestCreateDummyNode(t *testing.T) {
 	nsObj, api := getClientAndDeviceInfo()
 	api.CreateDummyNode(nsObj)
 }
+func TestInitFlannel(t *testing.T) {
+	nsObj, api := getClientAndDeviceInfo()
+	ingressDevice := createIngressDeviceClient(nsObj)
+	InitFlannel(api, ingressDevice, nsObj)
+}

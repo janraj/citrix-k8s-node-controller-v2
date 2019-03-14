@@ -60,3 +60,48 @@ func TestConfigDecider(t *testing.T) {
 	IngressDeviceClient := createIngressDeviceClient(ControllerInputObj)
 	ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
 }
+func TestGenerateNextPodAddr(t *testing.T) {
+	nextIP := GenerateNextPodAddr("10.10.10.10")
+     	if (nextIP != "10.10.10.11"){
+		t.Error("Expected 10.10.10.11, got ", nextIP)
+	}
+	nextIP = GenerateNextPodAddr("10.10.10.244")
+     	if (nextIP != "10.10.10.245"){
+		t.Error("Expected 10.10.10.245, got ", nextIP)
+	}
+	nextIP = GenerateNextPodAddr("0.0.0.0")
+     	if (nextIP != "0.0.0.1"){
+		t.Error("Expected 0.0.0.1, got ", nextIP)
+	}
+	nextIP = GenerateNextPodAddr("10.10.10.300")
+     	if (nextIP != "Error"){
+		t.Error("Expected Error, got ", nextIP)
+	}
+}
+/*
+func TestCoreHandler(t *testing.T){
+	controllerInput := FetchCitrixNodeControllerInput()
+	ingressDevice := createIngressDeviceClient(controllerInput)
+
+	event := "ADD"
+	obj := "None"	
+	newobj := "None"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "ADD"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "ADD"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "DELETE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "DELETE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "DELETE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "UPDATE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "UPDATE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	event = "UPDATE"	
+	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+}
+*/
