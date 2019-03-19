@@ -105,21 +105,21 @@ func TestCoreHandler(t *testing.T){
 	event := "ADD"
 	obj := api.GetDummyNode(controllerInput)	
 	newobj := api.GetDummyNode(controllerInput)	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "ADD"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "ADD"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "DELETE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "DELETE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "DELETE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "UPDATE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "UPDATE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "UPDATE"	
-	CoreHandler(obj, newobj, event, ingressDevice, controllerInput)
+	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 }

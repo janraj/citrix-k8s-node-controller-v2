@@ -196,7 +196,6 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 		node.Label = "citrixadc"
 		klog.Info("[INFO] Processing Citrix Dummy Node")
 	}
-        klog.Infof("[JANRAJ]",originalNode)
 	PodCIDR := originalNode.Spec.PodCIDR
         InternalIP, ExternalIP, HostName := GetNodeAddress(originalNode)
 	node.IPAddr = InternalIP
