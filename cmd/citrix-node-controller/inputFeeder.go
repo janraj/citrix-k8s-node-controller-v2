@@ -81,9 +81,9 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
         InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
 	if InputDataBuff.IngressDeviceVxlanID == 0 {
-		klog.Info("[INFO] VXLAN ID has Not Given, taking 5000 as default VXLAN_ID")
-		InputDataBuff.IngressDeviceVxlanID = 5000
-		InputDataBuff.IngressDeviceVxlanIDs = "5000"
+		klog.Info("[INFO] VXLAN ID has Not Given, taking 1 as default VXLAN_ID (flannel uses 1 as default)")
+		InputDataBuff.IngressDeviceVxlanID = 1
+		InputDataBuff.IngressDeviceVxlanIDs = "1"
 	}
 	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
 	if InputDataBuff.ClusterCNIPort == 0 {
