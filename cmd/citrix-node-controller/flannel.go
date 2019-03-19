@@ -23,10 +23,11 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixadc",
 		},
-		//Spec: v1.NodeSpec{
-		//        PodCIDR: obj.IngressDevicePodCIDR,
-		//},
+		Spec: v1.NodeSpec{
+                       PodCIDR: obj.IngressDevicePodCIDR,
+                },
 	}
+	//NewNode.Sepc.PodCIDR = obj.IngressDevicePodCIDR
 	NewNode.Labels = make(map[string]string)
 	NewNode.Labels["com.citrix.nodetype"] = obj.DummyNodeLabel
 	NewNode.Annotations = make(map[string]string)
@@ -123,7 +124,7 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
                 time.Sleep(60 * time.Second) //TODO, We have to wait till Node is available.
 		dummyNode = api.GetDummyNode(controllerInput)
 	}
-	node := ParseNodeEvents(dummyNode, ingressDevice, controllerInput)
+	node := ParseNodeEvents(api, dummyNode, ingressDevice, controllerInput)
 	node.PodNetMask = "255.255.0.0" //Automate to find next highest number
 	CreateVxlanConfig(ingressDevice, controllerInput, node)
 }

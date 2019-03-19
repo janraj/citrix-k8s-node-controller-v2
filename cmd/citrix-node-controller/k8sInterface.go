@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 	"os"
+	"time"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -111,14 +112,14 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	nodeListWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "nodes", v1.NamespaceAll, fields.Everything())
 	_, nodecontroller := cache.NewInformer(nodeListWatcher, &v1.Node{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			CoreHandler(obj, nil, "ADD", IngressDeviceClient, ControllerInputObj)
+			CoreHandler(api, obj, nil, "ADD", IngressDeviceClient, ControllerInputObj)
 		},
 		UpdateFunc: func(obj interface{}, newobj interface{}) {
-			CoreHandler(obj, newobj, "UPDATE", IngressDeviceClient, ControllerInputObj)
+			CoreHandler(api, obj, newobj, "UPDATE", IngressDeviceClient, ControllerInputObj)
 		},
 		DeleteFunc: func(obj interface{}) {
 			fmt.Println("Node DELETE", obj)
-			CoreHandler(obj, nil, "DELETE", IngressDeviceClient, ControllerInputObj)
+			CoreHandler(api, obj, nil, "DELETE", IngressDeviceClient, ControllerInputObj)
 		},
 	},
 	)
@@ -181,7 +182,7 @@ func GetNodeAddress(node v1.Node) (string, string, string){
 *   Descr   :  This API  Parses the object and prepare node object. 				*
 *************************************************************************************************
  */
-func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
+func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
 	node := new(Node)
 	originalObjJS, err := json.Marshal(obj)
 	if err != nil {
@@ -195,6 +196,7 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		node.Label = "citrixadc"
 		klog.Info("[INFO] Processing Citrix Dummy Node")
 	}
+        klog.Infof("[JANRAJ]",originalNode)
 	PodCIDR := originalNode.Spec.PodCIDR
         InternalIP, ExternalIP, HostName := GetNodeAddress(originalNode)
 	node.IPAddr = InternalIP
@@ -230,7 +232,39 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 		ControllerInputObj.NodesInfo[node.IPAddr] = node
 	}else{
 		klog.Errorf("[WARNING] Does not have PodCIDR Information")
-		klog.Info("[INFO] Reading POD CIDR, MAC information from ConfigMap")
+		klog.Info("[INFO] Generating PODCIDR and Node Information")
+        	originalNode.Labels["NodeIP"] = node.IPAddr
+        	if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
+            		klog.Error("Failed to update label " + err.Error())
+        	}
+		pod := &v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "citrixdummypod",
+			},
+			Spec: v1.PodSpec{
+				Containers: []v1.Container{
+					{
+						Name:  "citrixdummypod",
+						Image: "fakeimage",
+					},
+				},
+			},
+		}
+		nodeSelector :=  make(map[string]string)
+		nodeSelector["NodeIP"] = node.IPAddr
+		pod.Spec.NodeSelector = nodeSelector
+        	if _, err = api.Client.CoreV1().Pods("default").Create(pod); err != nil {  
+            		klog.Error("Failed to Create a Pod " + err.Error())
+        	}
+                time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+		pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
+		//if err != nil {
+		//	return pod, fmt.Errorf("pod Get API error: %v", err)
+		//}
+		klog.Info("PODS INFO", pod.Status.PodIP)
+		node.PodVTEP = "00:11:11:00:01:10"
+		node.PodAddress = pod.Status.PodIP
+		node.PodNetMask = ConvertPrefixLenToMask("24")
 	} 
 	return node
 }
@@ -244,8 +278,8 @@ func ParseNodeEvents(obj interface{}, IngressDeviceClient *NitroClient, Controll
 *	       It parses the Node event object and calls route addition for the new Node.	*
 *************************************************************************************************
  */
-func CoreAddHandler(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
-	node := ParseNodeEvents(obj, IngressDeviceClient, ControllerInputObj)
+func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	node := ParseNodeEvents(api, obj, IngressDeviceClient, ControllerInputObj)
 	if (node.Label != "citrixadc"){
 		NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
 	}else {
@@ -263,8 +297,8 @@ func CoreAddHandler(obj interface{}, IngressDeviceClient *NitroClient, Controlle
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
-func CoreDeleteHandler(obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
-	node := ParseNodeEvents(obj, ingressDevice, controllerInput)
+func CoreDeleteHandler(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
+	node := ParseNodeEvents(api, obj, ingressDevice, controllerInput)
 	NsInterfaceDeleteRoute(ingressDevice, controllerInput, node)
 }
 
@@ -277,8 +311,8 @@ func CoreDeleteHandler(obj interface{}, ingressDevice *NitroClient, controllerIn
 *	       It parses the Node event object and calls route addition for the new Node.	*
 *************************************************************************************************
  */
-func CoreUpdateHandler(obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
-	node := ParseNodeEvents(obj, IngressDeviceClient, ControllerInputObj)
+func CoreUpdateHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	node := ParseNodeEvents(api, obj, IngressDeviceClient, ControllerInputObj)
 	fmt.Println("UPDATE HANDLER", node)
 }
 
@@ -292,14 +326,14 @@ func CoreUpdateHandler(obj interface{}, IngressDeviceClient *NitroClient, Contro
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
-func CoreHandler(obj interface{}, newobj interface{}, event string, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+func CoreHandler(api *KubernetesAPIServer, obj interface{}, newobj interface{}, event string, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	//create a slice of ops
 
 	if event == "ADD" {
-		CoreAddHandler(obj, IngressDeviceClient, ControllerInputObj)
+		CoreAddHandler(api, obj, IngressDeviceClient, ControllerInputObj)
 	}
 	if event == "DELETE" {
-		CoreDeleteHandler(obj, IngressDeviceClient, ControllerInputObj)
+		CoreDeleteHandler(api, obj, IngressDeviceClient, ControllerInputObj)
 	}
 	if event == "UPDATE" {
 		//	CoreUpdateHandler(obj, IngressDeviceClient, ControllerInputObj)

@@ -181,48 +181,6 @@ func (d *ConfigPack) Set(k Key, v Value) {
 	d.keys = append(d.keys, k.(string))
 }
 
-//func main() {
-func NsInterface(client *NitroClient, obj *ControllerInput) {
-	flannel := ConfigPack{}
-	vxlan := Vxlan{
-		Id:   5556,
-		Port: 3336,
-	}
-	flannel.Set("vxlan", &vxlan)
-	vxlanbind := Vxlan_srcip_binding{
-		Id:    5556,
-		Srcip: "10.102.169.244",
-	}
-	flannel.Set("vxlan_srcip_binding", &vxlanbind)
-
-	nsip := Nsip{
-		Ipaddress: "10.244.250.250",
-		Netmask:   "255.255.0.0",
-	}
-	flannel.Set("nsip", &nsip)
-
-	route := Route{
-		Network: "10.244.1.0",
-		Netmask: "255.255.255.0",
-		Gateway: "10.244.1.0",
-	}
-	flannel.Set("route", &route)
-
-	arp := Arp{
-		Ipaddress: "10.244.1.0",
-		Mac:       "2e:3c:5a:0c:64:68",
-		Vxlan:     "5556",
-		Vtep:      "10.102.33.198",
-	}
-	flannel.Set("arp", &arp)
-
-	for ind, _ := range flannel.keys {
-		result, err := client.AddResource(flannel.keys[ind], "flannel", flannel.items[flannel.keys[ind]])
-		if err != nil {
-			fmt.Println("Result err ", result, err)
-		}
-	}
-}
 func createIngressDeviceClient(input *ControllerInput) *NitroClient {
 	client := NewNitroClient(input)
 	return client
@@ -238,9 +196,9 @@ func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 
 /*
 *************************************************************************************************
-*   APIName :  InitializeNode                                                                   *
-*   Input   :  Nil.					             			        *
-*   Output  :  Nil.				                                                *
+*   APIName :  NsInterfaceAddRoute                                                              *
+*   Input   :  k8sclient, nitro client and node					             	*
+*   Output  :  Create Route and Arp.				                                *
 *   Descr   :  This API initialize a node and return it.					*
 *************************************************************************************************
  */
