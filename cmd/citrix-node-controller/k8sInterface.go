@@ -163,13 +163,13 @@ func GetNodeAddress(node v1.Node) (string, string, string){
         for _, addr := range node.Status.Addresses {
 		if (addr.Type == "InternalIP"){
 			InternalIP = addr.Address
-        		klog.Info("[INFO] Internal IP of Node", InternalIP)
+        		klog.Info("[INFO] Internal IP of Node:\t", InternalIP)
 		}else if (addr.Type == "Hostname"){
 			HostName = addr.Address
-        		klog.Info("[INFO] Host Name of Node", HostName)
+        		klog.Info("[INFO] Host Name of Node:\t", HostName)
 		}else if (addr.Type == "ExternalIP"){
 			ExternalIP = addr.Address
-        		klog.Info("[INFO] External IP  of Node", ExternalIP)
+        		klog.Info("[INFO] External IP  of Node:\t", ExternalIP)
 		}
 	}
 	return InternalIP, ExternalIP, HostName
@@ -235,8 +235,10 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 		if (originalNode.Labels["NodeIP"] == "" && node.IPAddr !="") {
         		originalNode.Labels["NodeIP"] = node.IPAddr
         		if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
-            			klog.Error("Failed to update label " + err.Error())
-        		}
+            			klog.Error("[ERROR] Failed to update label " + err.Error())
+        		}else {
+            			klog.Info("[INFO] Updated node  label")
+			}
 			pod := &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "citrixdummypod",
