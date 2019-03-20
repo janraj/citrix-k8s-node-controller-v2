@@ -267,6 +267,7 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 			node.PodVTEP = "00:11:11:00:01:10"
 			node.PodAddress = pod.Status.PodIP
 			node.PodNetMask = ConvertPrefixLenToMask("24")
+			api.Client.CoreV1().Pods("default").Delete(pod.Name, &metav1.DeleteOptions{})
 		} 
 	}
 	return node
