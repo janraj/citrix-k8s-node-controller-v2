@@ -232,6 +232,9 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 	}else{
 		klog.Errorf("[WARNING] Does not have PodCIDR Information")
 		klog.Info("[INFO] Generating PODCIDR and Node Information")
+		if originalNode.Labels["NodeIP"] == "" {
+    			originalNode.Labels = make(map[string]string)
+		}
         	originalNode.Labels["NodeIP"] = node.IPAddr
         	if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
             		klog.Error("Failed to update label " + err.Error())
