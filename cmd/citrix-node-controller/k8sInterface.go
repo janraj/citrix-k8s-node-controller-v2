@@ -232,42 +232,41 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 	}else{
 		klog.Errorf("[WARNING] Does not have PodCIDR Information")
 		klog.Info("[INFO] Generating PODCIDR and Node Information")
-		if originalNode.Labels["NodeIP"] == "" {
-    			originalNode.Labels = make(map[string]string)
-		}
-        	originalNode.Labels["NodeIP"] = node.IPAddr
-        	if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
-            		klog.Error("Failed to update label " + err.Error())
-        	}
-		pod := &v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "citrixdummypod",
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{
+		if (originalNode.Labels["NodeIP"] == "" && node.IPAddr !="") {
+        		originalNode.Labels["NodeIP"] = node.IPAddr
+        		if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
+            			klog.Error("Failed to update label " + err.Error())
+        		}
+			pod := &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "citrixdummypod",
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
 						Name:  "citrixdummypod",
 						Image: "fakeimage",
+						},
 					},
 				},
-			},
-		}
-		nodeSelector :=  make(map[string]string)
-		nodeSelector["NodeIP"] = node.IPAddr
-		pod.Spec.NodeSelector = nodeSelector
-        	if _, err = api.Client.CoreV1().Pods("default").Create(pod); err != nil {  
-            		klog.Error("Failed to Create a Pod " + err.Error())
-        	}
-                time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
-		pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
-		//if err != nil {
-		//	return pod, fmt.Errorf("pod Get API error: %v", err)
-		//}
-		klog.Info("PODS INFO", pod.Status.PodIP)
-		node.PodVTEP = "00:11:11:00:01:10"
-		node.PodAddress = pod.Status.PodIP
-		node.PodNetMask = ConvertPrefixLenToMask("24")
-	} 
+			}
+			nodeSelector :=  make(map[string]string)
+			nodeSelector["NodeIP"] = node.IPAddr
+			pod.Spec.NodeSelector = nodeSelector
+        		if _, err = api.Client.CoreV1().Pods("default").Create(pod); err != nil {  
+            			klog.Error("Failed to Create a Pod " + err.Error())
+        		}
+                	time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+			pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
+			//if err != nil {
+			//	return pod, fmt.Errorf("pod Get API error: %v", err)
+			//}
+			klog.Info("PODS INFO", pod.Status.PodIP)
+			node.PodVTEP = "00:11:11:00:01:10"
+			node.PodAddress = pod.Status.PodIP
+			node.PodNetMask = ConvertPrefixLenToMask("24")
+		} 
+	}
 	return node
 }
 
