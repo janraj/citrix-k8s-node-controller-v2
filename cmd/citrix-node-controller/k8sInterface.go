@@ -392,7 +392,7 @@ func ParseNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressDevi
 }
 /*
 *************************************************************************************************
-*   APIName :  GenerateNodeInfo                                                            *
+*   APIName :  GenerateNodeInfo                                                            	*
 *   Input   :  Takes API server session called client.             			        *
 *   Output  :  Invokes call back functions.	                                                *
 *   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
@@ -420,10 +420,14 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	Capabilities := new(v1.Capabilities)
 	Capabilities.Add = append(Capabilities.Add, "NET_ADMIN")
 	SecurityContext.Capabilities = Capabilities
-	
+	ip := node.IPAddr
+	if (node.IPAddr == ""){
+		ip = node.ExternalIPAddr
+	}
+        name := "citrixdummypod"+ip	
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "citrixdummypod",
+			Name: name,
                         Namespace: "citrix",
 		},
 		Spec: v1.PodSpec{
@@ -466,13 +470,13 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	//node.PodAddress = PodIP
 	//node.PodNetMask = ConvertPrefixLenToMask("24")
         //time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
-	api.Client.CoreV1().Pods("citrix").Delete(pod.Name, &metav1.DeleteOptions{})
-        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+	//api.Client.CoreV1().Pods("citrix").Delete(pod.Name, &metav1.DeleteOptions{})
+        //time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
 	//node.NextPodAddress = address
 }
 /*
 *************************************************************************************************
-*   APIName :  GenerateNodeInfo                                                            *
+*   APIName :  GenerateNodeInfo                                                            	*
 *   Input   :  Takes API server session called client.             			        *
 *   Output  :  Invokes call back functions.	                                                *
 *   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
