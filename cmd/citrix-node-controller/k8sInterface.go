@@ -435,7 +435,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 			HostNetwork: true,
 			Containers: []v1.Container{
 				{
-					Name:  "citrixdummypod",
+					Name:  name,
 					Image: "quay.io/citrix/dummynode:latest",	
 					Command: command,
 					Args: args,
