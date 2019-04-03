@@ -458,11 +458,11 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
         }
         time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
 
-	//pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
-	//if err != nil {
-	//	return pod, fmt.Errorf("pod Get API error: %v", err)
-	//}
-	//klog.Info("PODS INFO", pod.Status.PodIP)
+	pod, err = api.Client.CoreV1().Pods("citrix").Get(pod.Name, metav1.GetOptions{})
+	if err != nil {
+		return pod, fmt.Errorf("pod Get API error: %v", err)
+	}
+	klog.Info("PODS INFO", pod.Status.PodIP)
 	//node.PodVTEP = "00:11:11:00:01:10"
 	//s := strings.Split(pod.Status.PodIP, ".")
 	//PodIP := fmt.Sprintf(s[0]+"."+s[1]+"."+s[2]+".0")	
