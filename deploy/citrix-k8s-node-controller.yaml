@@ -83,12 +83,13 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: NS_IP
-          value: "10.102.33.208"
+          value: "xxxxxxx"
         - name: NS_LOGIN
-          value: "nsroot"
+          value: "xxxxx"
         - name: NS_PASSWORD
-          value: "nsroot"
+          value: "xxxxx"
         - name: NS_SNIP
-          value: "10.102.33.209"
+          value: "xxx.xxx.xxx.xxx"
         - name: NS_VTEP_MAC
-          value: "2e:f6:be:94:9f:63"
+          value: "xx:xx:xx:xx:xx:xx"
+
