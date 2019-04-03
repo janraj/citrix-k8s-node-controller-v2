@@ -207,7 +207,15 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 		klog.Info("[INFO] Setting Node Role", node.Role)
 	}
         if (PodCIDR != "" || node.Label == "citrixadc" || node.Role == "Master" ){
-		klog.Info("[INFO] PodCIDR Information is Present: PodiCIDR", PodCIDR)
+		if (PodCIDR != "") {
+			klog.Info("[INFO] PodCIDR Information is Present: PodCIDR", PodCIDR)
+		}
+		if (node.Label == "citrixadc") {
+			klog.Info("[INFO] Its Citrix ADC event")
+		}
+		if (node.Role == "Master") {
+			klog.Info("[INFO] Master Node events")
+		}
 		ParseNodeNetworkInfo(api, obj, IngressDeviceClient, ControllerInputObj, node, PodCIDR)
 	}else{
 		klog.Errorf("[WARNING] Does not have PodCIDR Information, CNC will Generate itself")
