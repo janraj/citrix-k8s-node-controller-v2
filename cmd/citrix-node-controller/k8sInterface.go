@@ -420,14 +420,9 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	Capabilities := new(v1.Capabilities)
 	Capabilities.Add = append(Capabilities.Add, "NET_ADMIN")
 	SecurityContext.Capabilities = Capabilities
-	ip := node.IPAddr
-	if (node.IPAddr == ""){
-		ip = node.ExternalIPAddr
-	}
-        name := "citrixdummypod"+ip	
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: "citrixdummypod",
                         Namespace: "citrix",
 		},
 		Spec: v1.PodSpec{
@@ -435,7 +430,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 			HostNetwork: true,
 			Containers: []v1.Container{
 				{
-					Name:  name,
+					Name:  "citrixdummypod",
 					Image: "quay.io/citrix/dummynode:latest",	
 					Command: command,
 					Args: args,
