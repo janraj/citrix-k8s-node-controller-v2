@@ -459,18 +459,19 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	if err != nil {
 		fmt.Errorf("pod Get API error: %v \n pod: %v", err, pod)
 	}
-	klog.Info("PODS INFO", pod.Status.PodIP)
 	configMaps, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	if err != nil {
 		fmt.Errorf("ConfigMap Get API error: %v \n pod: %v", configMaps, err)
 	}
-	ConfigMapData := make(map[string]string)
-	ConfigMapData = configMaps.Data
-	klog.Info("CONFIG MAP DATA", ConfigMapData)
-	node.PodAddress = ConfigMapData[node.IPAddr]
-	node.PodVTEP = ConfigMapData[node.PodAddress]
-	node.PodNetMask = ConvertPrefixLenToMask("24")
-        node.PodMaskLen = "24"
+	if (configMaps != nil) {
+		ConfigMapData := make(map[string]string)
+		ConfigMapData = configMaps.Data
+		klog.Info("CONFIG MAP DATA", ConfigMapData)
+		node.PodAddress = ConfigMapData[node.IPAddr]
+		node.PodVTEP = ConfigMapData[node.PodAddress]
+		node.PodNetMask = ConvertPrefixLenToMask("24")
+	        node.PodMaskLen = "24"
+	}
 }
 /*
 *************************************************************************************************
