@@ -79,7 +79,7 @@ spec:
       containers:
       - name: citrix-node-controller
         image: "quay.io/citrix/citrix-k8s-node-controller:latest"
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
         - name: NS_IP
           value: "xxxxxxx"
