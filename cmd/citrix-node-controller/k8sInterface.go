@@ -206,7 +206,7 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 		ParseNodeRoles(node, originalNode)
 		klog.Info("[INFO] Setting Node Role", node.Role)
 	}
-        if (PodCIDR != nil || node.Label == "citrixadc" || node.Role == "Master" ){
+        if (PodCIDR != "" || node.Label == "citrixadc" || node.Role == "Master" ){
 		klog.Infof("[INFO] PodCIDR Information is Present: PodiCIDR=%v", PodCIDR)
 		ParseNodeNetworkInfo(api, obj, IngressDeviceClient, ControllerInputObj, node, PodCIDR)
 	}else{
