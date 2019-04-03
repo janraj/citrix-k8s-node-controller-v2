@@ -70,7 +70,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
-//		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
 	if len(InputDataBuff.ClusterCNI) == 0 {
