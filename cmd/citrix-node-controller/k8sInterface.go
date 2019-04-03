@@ -416,7 +416,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	}
 	command := []string{"/bin/bash", "-c"}
 	args := []string{
-                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  echo \"IP Addredd ${theIPaddress}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`; ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1; sleep 3d;"}
+                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  hostip=`ip -4 addr show eth0  | grep inet | awk '{print $2}' | cut -d/ -f1`; echo \"IP Addredd ${theIPaddress}\"; echo \"Host IP Address ${hostip}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`;  `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$hostip\"'\": \"'\"$theIPaddress\"'\"}}'`; ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1; sleep 3d;"}
 	
         SecurityContext := new(v1.SecurityContext)
 	Capabilities := new(v1.Capabilities)
@@ -424,7 +424,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	SecurityContext.Capabilities = Capabilities
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "citrixdummypod"+string(podcount),
+			Name: "citrixdummypod"+strconv.Itoa(podcount),
                         Namespace: "citrix",
 		},
 		Spec: v1.PodSpec{
@@ -432,7 +432,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 			HostNetwork: true,
 			Containers: []v1.Container{
 				{
-					Name:  "citrixdummypod"+string(podcount),
+					Name:  "citrixdummypod"+strconv.Itoa(podcount),
 					Image: "quay.io/citrix/dummynode:latest",	
 					Command: command,
 					Args: args,
@@ -464,17 +464,13 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	if err != nil {
 		fmt.Errorf("ConfigMap Get API error: %v \n pod: %v", configMaps, err)
 	}
-	klog.Info("CONFIG MAP", configMaps)
-	//node.PodVTEP = "00:11:11:00:01:10"
-	//s := strings.Split(pod.Status.PodIP, ".")
-	//PodIP := fmt.Sprintf(s[0]+"."+s[1]+"."+s[2]+".0")	
-	//klog.Info("PODS INFO ", PodIP)
-	//node.PodAddress = PodIP
-	//node.PodNetMask = ConvertPrefixLenToMask("24")
-        //time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
-	//api.Client.CoreV1().Pods("citrix").Delete(pod.Name, &metav1.DeleteOptions{})
-        //time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
-	//node.NextPodAddress = address
+	ConfigMapData := make(map[string]string)
+	ConfigMapData = configMaps.Data
+	klog.Info("CONFIG MAP DATA", ConfigMapData)
+	node.PodAddress = ConfigMapData[node.IPAddr]
+	node.PodVTEP = ConfigMapData[node.PodAddress]
+	node.PodNetMask = ConvertPrefixLenToMask("24")
+        node.PodMaskLen = "24"
 }
 /*
 *************************************************************************************************
