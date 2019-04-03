@@ -460,7 +460,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 
 	pod, err = api.Client.CoreV1().Pods("citrix").Get(pod.Name, metav1.GetOptions{})
 	if err != nil {
-		return pod, fmt.Errorf("pod Get API error: %v", err)
+		fmt.Errorf("pod Get API error: %v \n pod: %v", err, pod)
 	}
 	klog.Info("PODS INFO", pod.Status.PodIP)
 	//node.PodVTEP = "00:11:11:00:01:10"
