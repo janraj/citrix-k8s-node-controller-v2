@@ -4,6 +4,7 @@ import (
 	"k8s.io/klog"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Node struct {
@@ -20,6 +21,7 @@ type Node struct {
 	VxlanPort  string `json:"prefix, omitempty"`
 	Count      int    `json:"count,omitempty"`
 	Label     string `json:"label,omitempty"`
+	Role     string `json:"label,omitempty"`
 }
 
 type ControllerInput struct {
@@ -29,6 +31,7 @@ type ControllerInput struct {
 	IngressDevicePassword string
 	IngressDeviceVtepIP  string
 	IngressDevicePodCIDR  string
+	IngressDevicePodIP  string
 	IngressDeviceVxlanID  int
 	IngressDeviceVxlanIDs  string
 	ClusterCNI            string
@@ -67,7 +70,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
-		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+//		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
 	if len(InputDataBuff.ClusterCNI) == 0 {
@@ -77,6 +80,8 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
 		klog.Infof("[INFO] IngressDevicePodCIDR is Empty")
 	}
+	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
+        InputDataBuff.IngressDevicePodIP = splitString[0] 
 	InputDataBuff.DummyNodeLabel = "citrixadc"
         InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)

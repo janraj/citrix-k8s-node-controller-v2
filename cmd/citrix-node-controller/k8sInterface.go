@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"time"
 	"path/filepath"
@@ -124,11 +125,8 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	},
 	)
 	stop := make(chan struct{})
-	defer close(stop)
 	go nodecontroller.Run(stop)
-
-	select {}
-
+	return 
 }
 /*
 *************************************************************************************************
@@ -184,6 +182,8 @@ func GetNodeAddress(node v1.Node) (string, string, string){
  */
 func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
 	node := new(Node)
+	node.Role = ""
+	node.Label = ""
 	originalObjJS, err := json.Marshal(obj)
 	if err != nil {
 		klog.Errorf("[ERROR] Failed to Marshal original object: %v", err)
@@ -201,75 +201,18 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 	node.IPAddr = InternalIP
         node.HostName = HostName
         node.ExternalIPAddr = ExternalIP
-        if (PodCIDR != ""){
-		klog.Infof("[INFO] PodCIDR Information is Present: PodiCIDR=%v", PodCIDR)
-		splitString := strings.Split(PodCIDR, "/")
-		address, masklen := splitString[0], splitString[1]
-		backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
-		vtepMac := make(map[string]string)
-		err = json.Unmarshal(backendData, &vtepMac)
-		if err != nil {
-			klog.Error("[ERROR] Issue with Json unmarshel", err)
-		}
-		if (node.HostName != ""){
-			node.HostName = "Citrix"
-		}
-		if (node.IPAddr != ""){
-			node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
-		}
-		node.PodVTEP = vtepMac["VtepMAC"]
-		node.PodAddress = address
-		NextPodAddress := GenerateNextPodAddr(address)
-		if (NextPodAddress != "Error"){
-			node.NextPodAddress = NextPodAddress
-		}else{
-			node.NextPodAddress = address
-		}
-		node.PodNetMask = ConvertPrefixLenToMask(masklen)
-		node.PodMaskLen = masklen
-		node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
-		ControllerInputObj.NodesInfo[node.IPAddr] = node
-	}else{
-		klog.Errorf("[WARNING] Does not have PodCIDR Information")
-		klog.Info("[INFO] Generating PODCIDR and Node Information")
-		if (originalNode.Labels["NodeIP"] == "" && node.IPAddr !="") {
-        		originalNode.Labels["NodeIP"] = node.IPAddr
-        		if _, err = api.Client.CoreV1().Nodes().Update(&originalNode); err != nil {  
-            			klog.Error("[ERROR] Failed to update label " + err.Error())
-        		}else {
-            			klog.Info("[INFO] Updated node  label")
-			}
-			pod := &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "citrixdummypod",
-				},
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						{
-						Name:  "citrixdummypod",
-						Image: "fakeimage",
-						},
-					},
-				},
-			}
-			nodeSelector :=  make(map[string]string)
-			nodeSelector["NodeIP"] = node.IPAddr
-			pod.Spec.NodeSelector = nodeSelector
-        		if _, err = api.Client.CoreV1().Pods("default").Create(pod); err != nil {  
-            			klog.Error("Failed to Create a Pod " + err.Error())
-        		}
-                	time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
-			pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
-			//if err != nil {
-			//	return pod, fmt.Errorf("pod Get API error: %v", err)
-			//}
-			klog.Info("PODS INFO", pod.Status.PodIP)
-			node.PodVTEP = "00:11:11:00:01:10"
-			node.PodAddress = pod.Status.PodIP
-			node.PodNetMask = ConvertPrefixLenToMask("24")
-			api.Client.CoreV1().Pods("default").Delete(pod.Name, &metav1.DeleteOptions{})
-		} 
+	if (originalNode.Spec.Taints!=nil){
+		klog.Info("[INFO] Taint Infromation", originalNode.Spec.Taints)
+		ParseNodeRoles(node, originalNode)
+		klog.Info("[INFO] Setting Node Role", node.Role)
 	}
+        if (PodCIDR != nil || node.Label == "citrixadc" || node.Role == "Master" ){
+		klog.Infof("[INFO] PodCIDR Information is Present: PodiCIDR=%v", PodCIDR)
+		ParseNodeNetworkInfo(api, obj, IngressDeviceClient, ControllerInputObj, node, PodCIDR)
+	}else{
+		klog.Errorf("[WARNING] Does not have PodCIDR Information, CNC will Generate itself")
+		GenerateNodeNetworkInfo(api, obj, IngressDeviceClient, ControllerInputObj, node, originalNode, PodCIDR)
+	} 
 	return node
 }
 
@@ -366,5 +309,173 @@ func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, control
 		InitFlannel(api, ingressDevice, controllerInput)
 	} else {
 		klog.Info("[INFO] Network Automation is not supported for other than Flannel")
+	}
+}
+/*
+*************************************************************************************************
+*   APIName :  ConfigMapInputWatcher                                                            *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Invokes call back functions.	                                                *
+*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
+*            events and store in node cache. Based on the events type, call back functions      *
+*	     Will execute and perform the desired tasks.					*
+*************************************************************************************************
+ */
+func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+
+	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", v1.NamespaceAll, fields.Everything())
+	_, configcontroller := cache.NewInformer(ConfigMapWatcher, &v1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			klog.Info("[INFO] ADD", obj)
+			//ReadConfigMap(api, obj, nil, "ADD", IngressDeviceClient, ControllerInputObj)
+		},
+		UpdateFunc: func(obj interface{}, newobj interface{}) {
+			klog.Info("[INFO] UPDATE", obj)
+			//ReadConfigMap(api, obj, newobj, "UPDATE", IngressDeviceClient, ControllerInputObj)
+		},
+		DeleteFunc: func(obj interface{}) {
+			klog.Info("[INFO] Node DELETE", obj)
+			//ReadConfigMap(api, obj, nil, "DELETE", IngressDeviceClient, ControllerInputObj)
+		},
+	},
+	)
+	stop := make(chan struct{})
+	go configcontroller.Run(stop)
+	return
+}
+/*
+*************************************************************************************************
+*   APIName :  ParseNodeNetworkInfo                                                             *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Invokes call back functions.	                                                *
+*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
+*            events and store in node cache. Based on the events type, call back functions      *
+*	     Will execute and perform the desired tasks.					*
+*************************************************************************************************
+ */
+func ParseNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput, node *Node, PodCIDR string) {
+	splitString := strings.Split(PodCIDR, "/")
+	address, masklen := splitString[0], splitString[1]
+	backendData := []byte(obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-data"])
+	vtepMac := make(map[string]string)
+	err = json.Unmarshal(backendData, &vtepMac)
+	if err != nil {
+		klog.Error("[ERROR] Issue with Json unmarshel", err)
+	}
+	if (node.HostName != ""){
+		node.HostName = "Citrix"
+	}
+	if (node.IPAddr != ""){
+		node.IPAddr = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/public-ip"]
+	}
+	node.PodVTEP = vtepMac["VtepMAC"]
+	node.PodAddress = address
+	NextPodAddress := GenerateNextPodAddr(address)
+	if (NextPodAddress != "Error"){
+		node.NextPodAddress = NextPodAddress
+	}else{
+		node.NextPodAddress = address
+	}
+	node.PodNetMask = ConvertPrefixLenToMask(masklen)
+	node.PodMaskLen = masklen
+	node.Type = obj.(*v1.Node).Annotations["flannel.alpha.coreos.com/backend-type"]
+	ControllerInputObj.NodesInfo[node.IPAddr] = node
+
+}
+/*
+*************************************************************************************************
+*   APIName :  GenerateNodeInfo                                                            *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Invokes call back functions.	                                                *
+*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
+*            events and store in node cache. Based on the events type, call back functions      *
+*	     Will execute and perform the desired tasks.					*
+*************************************************************************************************
+ */
+func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput, node *Node, originalNode v1.Node, PodCIDR string) {
+	klog.Info("[INFO] Generating PODCIDR and Node Information")
+	patchBytes := []byte(fmt.Sprintf(`{"metadata":{"labels":{"NodeIP":"%s"}}}`, node.IPAddr))
+	if (node.IPAddr == ""){
+		patchBytes = []byte(fmt.Sprintf(`{"metadata":{"labels":{"NodeIP":"%s"}}}`, node.ExternalIPAddr))
+	}
+        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+        if _, err = api.Client.CoreV1().Nodes().Patch(originalNode.Name, types.StrategicMergePatchType, patchBytes); err != nil {  
+            	klog.Error("[ERROR] Failed to Patch label %v",err)
+        }else {
+            	klog.Info("[INFO] Updated node  label")
+	}
+	command := []string{"/bin/bash", "-c"}
+	args := []string{
+                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1`;  echo \"IP Addredd ${theIPaddress}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`; ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1; sleep 3d;"}
+	
+        SecurityContext := new(v1.SecurityContext)
+	Capabilities := new(v1.Capabilities)
+	Capabilities.Add = append(Capabilities.Add, "NET_ADMIN")
+	SecurityContext.Capabilities = Capabilities
+	
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "citrixdummypod",
+                        Namespace: "citrix",
+		},
+		Spec: v1.PodSpec{
+			ServiceAccountName: "citrix-node-controller",
+			HostNetwork: true,
+			Containers: []v1.Container{
+				{
+					Name:  "citrixdummypod",
+					Image: "quay.io/citrix/dummynode:latest",	
+					Command: command,
+					Args: args,
+					SecurityContext: SecurityContext,
+					Env: []v1.EnvVar{
+						{Name: "network", Value: ControllerInputObj.IngressDevicePodCIDR},
+						{Name: "nexthop", Value: ControllerInputObj.IngressDevicePodIP},
+						{Name: "ingmac", Value: ControllerInputObj.IngressDeviceVtepMAC},
+					},    
+				},
+			},
+		},
+	}
+	nodeSelector :=  make(map[string]string)
+	nodeSelector["NodeIP"] = node.IPAddr
+	pod.Spec.NodeSelector = nodeSelector
+        time.Sleep(10 * time.Second) //TODO, We have to wait till Pod is available.
+        if _, err = api.Client.CoreV1().Pods("citrix").Create(pod); err != nil {  
+            	klog.Error("Failed to Create a Pod " + err.Error())
+        }
+        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+
+	//pod, err = api.Client.CoreV1().Pods("default").Get(pod.Name, metav1.GetOptions{})
+	//if err != nil {
+	//	return pod, fmt.Errorf("pod Get API error: %v", err)
+	//}
+	//klog.Info("PODS INFO", pod.Status.PodIP)
+	//node.PodVTEP = "00:11:11:00:01:10"
+	//s := strings.Split(pod.Status.PodIP, ".")
+	//PodIP := fmt.Sprintf(s[0]+"."+s[1]+"."+s[2]+".0")	
+	//klog.Info("PODS INFO ", PodIP)
+	//node.PodAddress = PodIP
+	//node.PodNetMask = ConvertPrefixLenToMask("24")
+        //time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+	api.Client.CoreV1().Pods("citrix").Delete(pod.Name, &metav1.DeleteOptions{})
+        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+	//node.NextPodAddress = address
+}
+/*
+*************************************************************************************************
+*   APIName :  GenerateNodeInfo                                                            *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Invokes call back functions.	                                                *
+*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
+*            events and store in node cache. Based on the events type, call back functions      *
+*	     Will execute and perform the desired tasks.					*
+*************************************************************************************************
+ */
+func ParseNodeRoles(node *Node, originalNode v1.Node){
+        for _, Role := range originalNode.Spec.Taints {
+		if (Role.Key == "node-role.kubernetes.io/master"){
+			node.Role = "Master"	
+		}
 	}
 }
