@@ -78,8 +78,7 @@ spec:
       serviceAccountName: citrix-node-controller
       containers:
       - name: citrix-node-controller
-        #image: "quay.io/citrix/citrix-k8s-node-controller:latest"
-        image: "citrix-k8s-node-controller:latest"
+        image: "quay.io/citrix/citrix-k8s-node-controller:latest"
         imagePullPolicy: IfNotPresent
         env:
         - name: NS_IP
