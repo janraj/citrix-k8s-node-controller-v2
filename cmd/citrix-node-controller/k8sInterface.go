@@ -400,7 +400,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	}
         time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
         if _, err = api.Client.CoreV1().Nodes().Patch(originalNode.Name, types.StrategicMergePatchType, patchBytes); err != nil {  
-            	klog.Error("[ERROR] Failed to Patch label %v",err)
+            	klog.Errorf("[ERROR] Failed to Patch label %v",err)
         }else {
             	klog.Info("[INFO] Updated node  label")
 	}
