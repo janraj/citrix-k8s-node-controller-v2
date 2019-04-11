@@ -26,6 +26,16 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 		Spec: v1.NodeSpec{
                        PodCIDR: obj.IngressDevicePodCIDR,
                 },
+                Status: v1.NodeStatus{
+			Conditions: []v1.NodeCondition{
+				{
+					Type:               v1.NodeReady,
+					Status:             v1.ConditionTrue,
+					Reason:             "KubeletReady",
+					Message:            "kubelet is posting ready status",
+				},
+			},
+		},	
 	}
 	//NewNode.Sepc.PodCIDR = obj.IngressDevicePodCIDR
 	NewNode.Labels = make(map[string]string)
@@ -35,7 +45,25 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 	NewNode.Annotations["flannel.alpha.coreos.com/backend-type"] = "vxlan"
 	NewNode.Annotations["flannel.alpha.coreos.com/public-ip"] = obj.IngressDeviceVtepIP
 	NewNode.Annotations["flannel.alpha.coreos.com/backend-data"] = backend_data
+	NewNode.Annotations["flannel.alpha.coreos.com/public-ip-overwrite"] = obj.IngressDeviceVtepIP
 	return NewNode
+}
+
+/*
+*************************************************************************************************
+*   APIName :  DeleteDummyNode                                                                  *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Nil.				                                                *
+*   Descr   :  This API  Creates a Dummy Node on K8s CLuster.					*
+*************************************************************************************************
+ */
+func (api KubernetesAPIServer) DeleteDummyNode(node *v1.Node, obj *ControllerInput){
+	klog.Info("[INFO] Deleting Citrix ADC Node")
+	err := api.Client.CoreV1().Nodes().Delete(node.GetObjectMeta().GetName(), metav1.NewDeleteOptions(0))
+	if err != nil {
+		klog.Error("[ERROR] Node Deletion has failed", err)
+	}
+	klog.Info("[INFO] Deleted Citrix ADC Node ")
 }
 
 /*
@@ -54,6 +82,7 @@ func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) *v1.Node {
 		klog.Error("[ERROR] Node Creation has failed", err)
 		return node
 	}
+        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
 	klog.Info("[INFO] Created Citrix ADC Node of name=", node.GetObjectMeta().GetName())
 	return node
 }
@@ -84,7 +113,8 @@ func (api KubernetesAPIServer) GetDummyNode(obj *ControllerInput) *v1.Node {
 *   Descr   :  This API  calls if the CNI is flannel and it creates a VXLAN COnfig for that.	*
 *************************************************************************************************
  */
-func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
+//func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
+func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput) {
 
 	configPack := ConfigPack{}
 	vxlan := Vxlan{
@@ -99,11 +129,29 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	configPack.Set("vxlan_srcip_binding", &vxlanbind)
    
 	nsip := Nsip{
-		Ipaddress: node.NextPodAddress,
-		Netmask:   node.PodNetMask,
+		Ipaddress: controllerInput.IngressDevicePodIP,
+		Netmask:   controllerInput.NodeSubnetMask,
 	}
 	configPack.Set("nsip", &nsip)
 	AddIngressDeviceConfig(&configPack, ingressDevice)
+}
+/*
+*************************************************************************************************
+*   APIName :  DeleteVxlanConfig	                                                        *
+*   Input   :  Takes ingress Device session, controller input and node.		             	*
+*   Output  :  Delete Config Pack for VXLAM.				        		*
+*   Descr   :  This API  calls if the CNI is flannel and it clears a VXLAN COnfig for that.	*
+*************************************************************************************************
+ */
+func DeleteVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
+
+	configPack := ConfigPack{}
+	vxlanargs := map[string]string{"id": controllerInput.IngressDeviceVxlanIDs}
+	configPack.Set("vxlan", vxlanargs)
+   
+	nsipargs := map[string]string{"ipaddress": node.NextPodAddress}
+	configPack.Set("nsip", nsipargs)
+	DeleteIngressDeviceConfig(&configPack, ingressDevice)
 }
 
 /*
@@ -119,12 +167,33 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
 	dummyNode := api.GetDummyNode(controllerInput)
 	ingressDevice.GetVxlanConfig(controllerInput)
 	if dummyNode == nil {
-		klog.Info("[INFO] Creating Citrix ADC node \n")
 		api.CreateDummyNode(controllerInput)
-                time.Sleep(60 * time.Second) //TODO, We have to wait till Node is available.
 		dummyNode = api.GetDummyNode(controllerInput)
+	}
+	//node := ParseNodeEvents(api, dummyNode, ingressDevice, controllerInput)
+	//node.PodNetMask = "255.255.0.0" //Automate to find next highest number
+	//CreateVxlanConfig(ingressDevice, controllerInput, node)
+	CreateVxlanConfig(ingressDevice, controllerInput)
+	controllerInput.State |= NetscalerInit 
+}
+/*
+*************************************************************************************************
+*   APIName :  TerminateFlannel	                                                                *
+*   Input   :  Takes Api, ingress Device session and controller input.		           	*
+*   Output  :  Retun Nil.								        *
+*   Descr   :  This API  Initialize flannel Config by creating Dummy Node Vxlan Config.		*
+*************************************************************************************************
+ */
+func TerminateFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
+	klog.Info("[INFO] Terminating Flannel Config")
+	dummyNode := api.GetDummyNode(controllerInput)
+	if dummyNode == nil {
+		klog.Info("[ERROR] Expecting Dummy node to be Present Citrix ADC node \n")
+		return 
 	}
 	node := ParseNodeEvents(api, dummyNode, ingressDevice, controllerInput)
 	node.PodNetMask = "255.255.0.0" //Automate to find next highest number
-	CreateVxlanConfig(ingressDevice, controllerInput, node)
+	DeleteVxlanConfig(ingressDevice, controllerInput, node)
+	api.DeleteDummyNode(dummyNode, controllerInput)
+	controllerInput.State |= NetscalerTerminate 
 }

@@ -97,7 +97,7 @@ func TestCitrixNodeWatcher(t *testing.T){
 	ingressDevice := createIngressDeviceClient(controllerInput)
 	CitrixNodeWatcher(api, ingressDevice, controllerInput)
 }*/
-
+/*
 func TestCoreHandler(t *testing.T){
 	controllerInput, api := getClientAndDeviceInfo()
 	ingressDevice := createIngressDeviceClient(controllerInput)
@@ -122,4 +122,4 @@ func TestCoreHandler(t *testing.T){
 	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
 	event = "UPDATE"	
 	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-}
+}*/

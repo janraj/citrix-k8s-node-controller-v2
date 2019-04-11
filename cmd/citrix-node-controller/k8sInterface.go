@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -120,7 +121,6 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 			CoreHandler(api, obj, newobj, "UPDATE", IngressDeviceClient, ControllerInputObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			fmt.Println("Node DELETE", obj)
 			CoreHandler(api, obj, nil, "DELETE", IngressDeviceClient, ControllerInputObj)
 		},
 	},
@@ -213,7 +213,7 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 			ParseNodeNetworkInfo(api, obj, IngressDeviceClient, ControllerInputObj, node, PodCIDR)
 		}
 		if (node.Label == "citrixadc") {
-			klog.Info("[INFO] Its Citrix ADC event")
+			klog.Info("[INFO] Add event for  Citrix ADC Node")
 		}
 		if (node.Role == "Master") {
 			klog.Info("[INFO] Master Node events")
@@ -237,7 +237,11 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	node := ParseNodeEvents(api, obj, IngressDeviceClient, ControllerInputObj)
 	if (node.Label != "citrixadc"){
-		NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+		if (ControllerInputObj.CncOperation == "ADD"){
+			NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+		}else{
+			klog.Info("[INFO] Citrix Node Controller operation in input is not ADD")
+		}
 	}else {
 		klog.Info("[INFO] Skipping Route addition for Dummy Node")
 	}
@@ -255,7 +259,11 @@ func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClie
  */
 func CoreDeleteHandler(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	node := ParseNodeEvents(api, obj, ingressDevice, controllerInput)
-	NsInterfaceDeleteRoute(ingressDevice, controllerInput, node)
+	if (node.Label != "citrixadc"){
+		NsInterfaceDeleteRoute(ingressDevice, controllerInput, node)
+	}else if ((controllerInput.State & NetscalerTerminate) != NetscalerTerminate){
+		klog.Info("[ERROR] Citrix dummy node has been removed Manually")
+	}
 }
 
 /*
@@ -313,7 +321,9 @@ func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 	}
 }
 func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
-	GetClusterCNI(api, controllerInput)
+	if (controllerInput.ClusterCNI == "") {
+		GetClusterCNI(api, controllerInput)
+	}
 	if controllerInput.ClusterCNI == "Flannel" {
 		InitFlannel(api, ingressDevice, controllerInput)
 	} else {
@@ -332,25 +342,228 @@ func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, control
  */
 func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 
-	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", v1.NamespaceAll, fields.Everything())
+	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", "citrix", fields.Everything())
 	_, configcontroller := cache.NewInformer(ConfigMapWatcher, &v1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			klog.Info("[INFO] ADD", obj)
-			//ReadConfigMap(api, obj, nil, "ADD", IngressDeviceClient, ControllerInputObj)
+			klog.Info("[INFO] CONFIG MAP ADD EVENT")
+			HandleConfigMapAddEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 		UpdateFunc: func(obj interface{}, newobj interface{}) {
-			klog.Info("[INFO] UPDATE", obj)
-			//ReadConfigMap(api, obj, newobj, "UPDATE", IngressDeviceClient, ControllerInputObj)
+			klog.Info("[INFO] UPDATE")
+			HandleConfigMapUpdateEvent(api, obj, newobj, IngressDeviceClient, ControllerInputObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			klog.Info("[INFO] Node DELETE", obj)
-			//ReadConfigMap(api, obj, nil, "DELETE", IngressDeviceClient, ControllerInputObj)
+			klog.Info("[INFO] Config Map is deleted, CNC clean UP the whole configurations which it has created", obj)
+			HandleConfigMapDeleteEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 	},
 	)
 	stop := make(chan struct{})
+	defer close(stop)
 	go configcontroller.Run(stop)
+	select {}
 	return
+}
+func CheckAndWaitForNetscalerInit(ControllerInputObj *ControllerInput){
+	if ((ControllerInputObj.State & NetscalerInit) != NetscalerInit){
+		klog.Info("[DEBUG] Waiting for NetScaler initialization to complete")
+	}
+	for {
+		if ((ControllerInputObj.State & NetscalerInit) == NetscalerInit){
+			break;
+		}
+	}
+}
+
+func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newobj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput){
+	node := new(Node)
+	klog.Info("[OLD OBJECT]", obj)
+	klog.Info("\n[NEW OBJECT]", newobj)
+	ConfigMapDataNew := make(map[string]string)
+        ConfigMapDataNew = newobj.(*v1.ConfigMap).Data
+	ConfigMapDataOld := make(map[string]string)
+        ConfigMapDataOld = obj.(*v1.ConfigMap).Data
+        if (ConfigMapDataNew["operation"] == "ADD" && ConfigMapDataOld["operation"] == "ADD"){
+		for key, value := range ConfigMapDataNew {
+			if (strings.Contains(value, ".") && strings.Contains(ConfigMapDataNew[value], ":")) {
+				if newval, ok := ConfigMapDataOld[key]; !ok {
+					klog.Info("[INFO] Key Value", key, value, newval)
+					node.IPAddr = key
+        				node.PodAddress = value
+        				node.PodVTEP = ConfigMapDataNew[node.PodAddress]
+        				node.PodNetMask = ConvertPrefixLenToMask("24")
+        				node.PodMaskLen = "24"
+					NsInterfaceAddRoute( IngressDeviceClient, ControllerInputObj, node)
+				}
+			}
+		}
+	}	
+        if (ConfigMapDataNew["operation"] == "ADD" && ConfigMapDataOld["operation"] == "DELETE"){
+	}	
+        if (ConfigMapDataNew["operation"] == "DELETE" && ConfigMapDataOld["operation"] == "ADD"){
+	}	
+        if (ConfigMapDataNew["operation"] == "DELETE" && ConfigMapDataOld["operation"] == "DELETE"){
+	}	
+}
+
+func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput){
+	ControllerInputObj.CncOperation = "ADD"
+	command := []string{"/bin/bash", "-c"}
+	args := []string{
+                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  hostip=`ip -4 addr show eth0  | grep inet | awk '{print $2}' | cut -d/ -f1`; echo \"IP Addredd ${theIPaddress}\"; echo \"Host IP Address ${hostip}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`;  `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$hostip\"'\": \"'\"$theIPaddress\"'\"}}'`;  ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1;bridge fdb add ${ingmac} dev flannel.1 dst ${vtepip}; sleep 3d;"}
+	
+        SecurityContext := new(v1.SecurityContext)
+	Capabilities := new(v1.Capabilities)
+	Capabilities.Add = append(Capabilities.Add, "NET_ADMIN")
+	SecurityContext.Capabilities = Capabilities
+	
+	DaemonSet := &appv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "citrixrouteaddpod",
+			Namespace: "citrix",
+			Labels: map[string]string{
+				"app":  "citrixrouteaddpod",
+			},
+		},
+		Spec: appv1.DaemonSetSpec{
+			MinReadySeconds: 2,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app":	"citrixrouteaddpod",
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "citrixrouteaddpod",
+					},
+					Name: "citrixrouteaddpod",
+				},
+				Spec: v1.PodSpec{
+					ServiceAccountName: "citrix-node-controller",
+					HostNetwork: true,
+					Containers: []v1.Container{
+						{
+							Name:  "citrixdummypod"+strconv.Itoa(podcount),
+							Image: "quay.io/citrix/dummynode:latest",	
+							Command: command,
+							Args: args,
+							SecurityContext: SecurityContext,
+							Env: []v1.EnvVar{
+								{Name: "network", Value: ControllerInputObj.IngressDevicePodSubnet},
+								{Name: "nexthop", Value: ControllerInputObj.IngressDevicePodIP},
+								{Name: "ingmac", Value: ControllerInputObj.IngressDeviceVtepMAC},
+								{Name: "vtepip", Value: ControllerInputObj.IngressDeviceVtepIP},
+							},    
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	if err != nil {
+		klog.Error("[ERROR] Failed to create daemon set:", err)
+	}
+}
+
+func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput){
+	ControllerInputObj.CncOperation = "DELETE"
+	CheckAndWaitForNetscalerInit(ControllerInputObj)
+	command := []string{"/bin/bash", "-c"}
+	args := []string{
+                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  hostip=`ip -4 addr show eth0  | grep inet | awk '{print $2}' | cut -d/ -f1`; echo \"IP Addredd ${theIPaddress}\"; echo \"Host IP Address ${hostip}\";ip route delete ${network}  via  ${nexthop} dev flannel.1 onlink; arp -d ${nexthop}  dev flannel.1; bridge fdb delete ${ingmac} dev flannel.1 dst ${vtepip}; sleep 3d;"}
+	
+        SecurityContext := new(v1.SecurityContext)
+	Capabilities := new(v1.Capabilities)
+	Capabilities.Add = append(Capabilities.Add, "NET_ADMIN")
+	SecurityContext.Capabilities = Capabilities
+	
+	DaemonSet := &appv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "citrixroutecleanuppod",
+			Namespace: "citrix",
+			Labels: map[string]string{
+				"app":  "citrixroutecleanuppod",
+			},
+		},
+		Spec: appv1.DaemonSetSpec{
+			MinReadySeconds: 2,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app":	"citrixroutecleanuppod",
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "citrixroutecleanuppod",
+					},
+					Name: "citrixroutecleanuppod",
+				},
+				Spec: v1.PodSpec{
+					ServiceAccountName: "citrix-node-controller",
+					HostNetwork: true,
+					Containers: []v1.Container{
+						{
+							Name:  "citrixdummypod"+strconv.Itoa(podcount),
+							Image: "quay.io/citrix/dummynode:latest",	
+							Command: command,
+							Args: args,
+							SecurityContext: SecurityContext,
+							Env: []v1.EnvVar{
+								{Name: "network", Value: ControllerInputObj.IngressDevicePodSubnet},
+								{Name: "nexthop", Value: ControllerInputObj.IngressDevicePodIP},
+								{Name: "ingmac", Value: ControllerInputObj.IngressDeviceVtepMAC},
+								{Name: "vtepip", Value: ControllerInputObj.IngressDeviceVtepIP},
+							},    
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	if err != nil {
+		klog.Error("[ERROR] Failed to create daemon set:", err)
+	}
+	
+	ClearAllRoutes(api, obj, IngressDeviceClient, ControllerInputObj)
+
+	TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
+}
+
+func AddAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
+	node := new(Node)
+	ConfigMapData := make(map[string]string)
+        ConfigMapData = obj.(*v1.ConfigMap).Data
+        klog.Info("JANRAJ CONFIG MAP DATA", ConfigMapData)
+	for key, value := range ConfigMapData {
+		if (strings.Contains(value, ".")) {
+			klog.Info("[INFO] Key Value", key, value)
+        		node.PodAddress = value
+        		node.PodVTEP = ConfigMapData[node.PodAddress]
+        		node.PodNetMask = ConvertPrefixLenToMask("24")
+        		node.PodMaskLen = "24"
+			NsInterfaceAddRoute(ingressDevice, controllerInput, node)
+		}
+	}	
+}
+func ClearAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
+	node := new(Node)
+	ConfigMapData := make(map[string]string)
+        ConfigMapData = obj.(*v1.ConfigMap).Data
+        klog.Info("JANRAJ CONFIG MAP DATA", ConfigMapData)
+	for key, value := range ConfigMapData {
+		if (strings.Contains(value, ".")) {
+			klog.Info("[INFO] Key Value", key, value)
+        		node.PodAddress = value
+        		node.PodVTEP = ConfigMapData[node.PodAddress]
+        		node.PodNetMask = ConvertPrefixLenToMask("24")
+        		node.PodMaskLen = "24"
+			NsInterfaceDeleteRoute(ingressDevice, controllerInput, node)
+		}
+	}	
 }
 /*
 *************************************************************************************************
@@ -416,7 +629,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	}
 	command := []string{"/bin/bash", "-c"}
 	args := []string{
-                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  hostip=`ip -4 addr show eth0  | grep inet | awk '{print $2}' | cut -d/ -f1`; echo \"IP Addredd ${theIPaddress}\"; echo \"Host IP Address ${hostip}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`;  `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$hostip\"'\": \"'\"$theIPaddress\"'\"}}'`; ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1; sleep 3d;"}
+                    "vtepmac=`ifconfig flannel.1 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' `; echo \"InterfaceInfo ${vtepmac}\"; theIPaddress=`ip -4 addr show flannel.1  | grep inet | awk '{print $2}' | cut -d/ -f1`;  hostip=`ip -4 addr show eth0  | grep inet | awk '{print $2}' | cut -d/ -f1`; echo \"IP Addredd ${theIPaddress}\"; echo \"Host IP Address ${hostip}\"; `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$theIPaddress\"'\": \"'\"$vtepmac\"'\"}}'`;  `kubectl patch configmap citrix-node-controller  -p '{\"data\":{\"'\"$hostip\"'\": \"'\"$theIPaddress\"'\"}}'`;  ip route add ${network}  via  ${nexthop} dev flannel.1 onlink; arp -s ${nexthop}  ${ingmac}  dev flannel.1; bridge fdb add ${ingmac} dev flannel.1 dst ${vtepip}; sleep 3d;"}
 	
         SecurityContext := new(v1.SecurityContext)
 	Capabilities := new(v1.Capabilities)
@@ -438,9 +651,10 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 					Args: args,
 					SecurityContext: SecurityContext,
 					Env: []v1.EnvVar{
-						{Name: "network", Value: ControllerInputObj.IngressDevicePodCIDR},
+						{Name: "network", Value: ControllerInputObj.IngressDevicePodSubnet},
 						{Name: "nexthop", Value: ControllerInputObj.IngressDevicePodIP},
 						{Name: "ingmac", Value: ControllerInputObj.IngressDeviceVtepMAC},
+						{Name: "vtepip", Value: ControllerInputObj.IngressDeviceVtepIP},
 					},    
 				},
 			},
@@ -449,16 +663,16 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	nodeSelector :=  make(map[string]string)
 	nodeSelector["NodeIP"] = node.IPAddr
 	pod.Spec.NodeSelector = nodeSelector
-        time.Sleep(10 * time.Second) //TODO, We have to wait till Pod is available.
-        if _, err = api.Client.CoreV1().Pods("citrix").Create(pod); err != nil {  
-            	klog.Error("Failed to Create a Pod " + err.Error())
-        }
-        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+        //time.Sleep(10 * time.Second) //TODO, We have to wait till Pod is available.
+        //if _, err = api.Client.CoreV1().Pods("citrix").Create(pod); err != nil {  
+        //    	klog.Error("Failed to Create a Pod " + err.Error())
+        //}
+        time.Sleep(60 * time.Second) //TODO, We have to wait till Node is available.
 
-	pod, err = api.Client.CoreV1().Pods("citrix").Get(pod.Name, metav1.GetOptions{})
-	if err != nil {
-		fmt.Errorf("pod Get API error: %v \n pod: %v", err, pod)
-	}
+	//pod, err = api.Client.CoreV1().Pods("citrix").Get(pod.Name, metav1.GetOptions{})
+	//if err != nil {
+	//	fmt.Errorf("pod Get API error: %v \n pod: %v", err, pod)
+	//}
 	configMaps, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	if err != nil {
 		fmt.Errorf("ConfigMap Get API error: %v \n pod: %v", configMaps, err)
@@ -471,6 +685,8 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 		node.PodVTEP = ConfigMapData[node.PodAddress]
 		node.PodNetMask = ConvertPrefixLenToMask("24")
 	        node.PodMaskLen = "24"
+	}else {
+		 klog.Error("Config MAP is Empty \n")
 	}
 }
 /*
@@ -490,3 +706,96 @@ func ParseNodeRoles(node *Node, originalNode v1.Node){
 		}
 	}
 }
+
+/*
+func IsNodeTolerable(taints []apiv1.Taint, tolerations []apiv1.Toleration) bool {
+	for _, taint := range taints {
+		var taintIsTolerated bool
+		for _, toleration := range tolerations {
+			if taint.Key == toleration.Key && taint.Value == toleration.Value {
+				taintIsTolerated = true
+				break
+			}
+		}
+		if !taintIsTolerated {
+			return false
+		}
+	}
+	return true
+}
+func waitForPodsToComeUP(){
+	var nodesMissingPod []string
+	for {
+		nodesMissingPod, err := getNodesMissingPod()
+		if err != nil {
+			klog.Errorf("[ERROR] Failed Getting Missing Node Info. Retrying.", err)
+			continue
+		}
+		if len(nodesMissingPod) <= 0 {
+			break
+		}
+	}
+}
+
+
+func getNodesMissingPod() ([]string, error) {
+
+	var nodesMissingDSPods []string
+
+	nodes, err := dsc.client.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nodesMissingDSPods, err
+	}
+
+	pods, err := dsc.client.CoreV1().Pods(dsc.Namespace).List(metav1.ListOptions{
+		IncludeUninitialized: true,
+		LabelSelector:        "app=" + dsc.DaemonSetName + ",source=kuberhealthy",
+	})
+	if err != nil {
+		return nodesMissingDSPods, err
+	}
+
+	// populate a node status map. default status is "false", meaning there is
+	// not a pod deployed to that node.  We are only adding nodes that tolerate
+	// our list of dsc.tolerations
+	nodeStatuses := make(map[string]bool)
+	for _, n := range nodes.Items {
+		if taintsAreTolerated(n.Spec.Taints, dsc.tolerations) {
+			nodeStatuses[n.Name] = false
+		}
+	}
+
+	// Look over all daemonset pods.  Mark any hosts that host one of the pods
+	// as "true" in the nodeStatuses map, indicating that a daemonset pod is
+	// deployed there.
+	//Additionally, only look on nodes with taints that we tolerate
+	for _, pod := range pods.Items {
+		// the pod should be ready
+		if pod.Status.Phase != "Running" {
+			continue
+		}
+		for _, node := range nodes.Items {
+			for _, nodeip := range node.Status.Addresses {
+				// We are looking for the Internal IP and it needs to match the host IP
+				if nodeip.Type != "InternalIP" || nodeip.Address != pod.Status.HostIP {
+					continue
+				}
+				if taintsAreTolerated(node.Spec.Taints, dsc.tolerations) {
+					nodeStatuses[node.Name] = true
+					break
+				}
+			}
+		}
+	}
+
+	// pick out all the nodes without daemonset pods on them and
+	// add them to the final results
+	for nodeName, hasDS := range nodeStatuses {
+		if !hasDS {
+			nodesMissingDSPods = append(nodesMissingDSPods, nodeName)
+		}
+	}
+
+	return nodesMissingDSPods, nil
+}
+*/

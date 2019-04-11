@@ -441,14 +441,6 @@
   revision = "b3a7cee44a305be0a69e1b9ac03018307287e1b0"
 
 [[projects]]
-  digest = "1:2c4c45bbb931129ffe0db6573f301e9e4ccb782d7933e0b11d08313748fbe4dd"
-  name = "k8s.io/kubernetes"
-  packages = ["pkg/util/wait"]
-  pruneopts = "UT"
-  revision = "e8846c1d7e7e632d4bd5ed46160eff3dc4c993c5"
-  version = "v1.7.16"
-
-[[projects]]
   branch = "master"
   digest = "1:14e8a3b53e6d8cb5f44783056b71bb2ca1ac7e333939cc97f3e50b579c920845"
   name = "k8s.io/utils"
@@ -473,6 +465,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/gorilla/mux",
+    "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/fields",
@@ -484,7 +477,6 @@
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/workqueue",
     "k8s.io/klog",
-    "k8s.io/kubernetes/pkg/util/wait",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

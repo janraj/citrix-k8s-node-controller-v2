@@ -193,6 +193,14 @@ func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 		}
 	}
 }
+func DeleteIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
+	for ind, _ := range config.keys {
+		err := client.DeleteResourceWithArgsMap(config.keys[ind], "", config.items[config.keys[ind]].(map[string]string))
+		if err != nil {
+			fmt.Println("Err ", err)
+		}
+	}
+}
 
 /*
 *************************************************************************************************
@@ -351,3 +359,4 @@ func deleteResponseHandler(resp *http.Response) ([]byte, error) {
 
 	}
 }
+

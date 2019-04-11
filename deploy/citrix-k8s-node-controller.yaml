@@ -38,14 +38,6 @@ metadata:
   name: citrix-node-controller
   namespace: citrix
 ---
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: citrix-node-controller
-  namespace: citrix
-data:
-  operation: "ADD"
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -91,4 +83,8 @@ spec:
           value: "xxx.xxx.xxx.xxx"
         - name: NS_VTEP_MAC
           value: "xx:xx:xx:xx:xx:xx"
+        - name: NS_POD_CIDR
+          value: "xxx.xxx.xxx.xxx/xx"
+        - name: NODE_CNI_CIDR
+          value: "xxx.xxx.xxx.xxx/xx"
 
