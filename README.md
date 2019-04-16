@@ -7,7 +7,7 @@
 [![HitCount](http://hits.dwyl.com/janraj/citrix-k8s-node-controller.svg)](http://hits.dwyl.com/janraj/citrix-k8s-node-controller)
 
 # **Citrix-k8s-node-controller**
-Citrix Node Controller (CNC) is a micro service which creates the network between cluster and ingress device.  Citrix node controller can run inside the cluster as a pod or outside the cluster. In case of outside the cluster, it requires a proper Kube config file to run successfully. <span style="color:red">**Citrix Node Controller currently works only with flannel as CNI. The scope of Citrix node controller can be extended to other CNI.**</span>
+Citrix Node Controller  is a micro service which creates the network between cluster and ingress device. <span style="color:red">**Citrix Node Controller currently works only with flannel as CNI. The scope of Citrix node controller can be extended to other CNI.**</span>
 
 ## **Description**
 When services on Kubernetes expose to external access via the Ingress device, there has to be proper networking between the Kubernetes nodes and ingress device to route the traffic into the cluster.   This is important because the pods will be having private IP’s based on the CNI framework.  These Private IP’s will not be able to directly access from ingress device without proper network configurations. Manual configuration to ensure such reachability is troublesome in Kubernetes world.
@@ -41,7 +41,6 @@ This is the high-level preview of Citrix node controller architecture. Following
        <summary>**Core**</summary>
 	    The core module interacts with node watcher and updates the corresponding config engine.  It is responsible for starting the best config engine for the corresponding             cluster.
        </details>
-
 ## **Questions**
 For questions and support the following channels are available:
 * [Citrix Discussion Forum](https://discussions.citrix.com/forum/1657-netscaler-cpx/). 
