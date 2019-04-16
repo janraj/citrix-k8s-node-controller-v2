@@ -1,6 +1,6 @@
 # **Install Citrix Node Controller**
 
- 1. Download the "citrix-k8s-node-controller.yaml" from the deployment Directory.
+ 1. **Download the "citrix-k8s-node-controller.yaml" from the deployment Directory.**
     ```
       wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/citrix-k8s-node-controller.yaml?token=AMvewY7ooAOE6KZsmhr07BswqSTAj3Ilks5ceA_rwA%3D%3D
     ```
@@ -15,7 +15,7 @@
     First three are required for citrix Node controller to monitor k8s events. No changes required.
     Next section defines environment variables required for Citrix Node Controller to configure the Citrix ADC.
 
- 2. Update the following env variables, for Citrix Node Controller bringup.
+ 2. **Update the following env variables, for Citrix Node Controller bringup.**
 
        <details>
        <summary>NS_IP</summary>
@@ -53,7 +53,7 @@
          CIDR of kubernetes cluster nodes from where each node  gets its own pod CIDR.
        </details>
     
-3. Deploy Citrix Node Controller. 
+3. **Deploy Citrix Node Controller.**
 
    Deploy Citrix Node Controller  on kubernetes by using 'kubectl create' command
         
@@ -63,11 +63,11 @@
                 
    Official Citrix Node Controller docker images is <span style="color:red"> `quay.io/citrix/citrix-k8s-node-controller:latest` </span>
 
-4.  Apply config map input.
+4.  **Apply config map input.**
     
     Citrix Node controller is ready for operation and must be waiting for this input. Config map input is manadatory for citrix node controller to work. Config Map is used for controlling the citrix node operation via **operation** data field.
 
     ```
 	kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
     ```
-    if **operation** data field in config map is ADD, Citrix node controller creates routing configuration on netscaler. If its **DELETE**, citrix node controller remove the routing configuration added earlier. 
+    if **operation** data field in config map is **ADD**, Citrix node controller creates routing configuration on netscaler. If its **DELETE**, citrix node controller remove the routing configuration added earlier. 
