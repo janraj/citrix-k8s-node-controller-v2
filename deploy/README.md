@@ -5,7 +5,7 @@
       wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/citrix-k8s-node-controller.yaml?token=AMvewY7ooAOE6KZsmhr07BswqSTAj3Ilks5ceA_rwA%3D%3D
     ```
                         
-    This yaml creates following on a new namespace called citrixnode
+    This yaml creates following on a new namespace called **citrix**
 
     * Cluster roles
     * Cluster role bindings
@@ -44,6 +44,14 @@
        <summary>NS_VTEP_MAC</summary>
          NetScaler MAC of VTEP IP, which is required for Flannel CNI.
        </details>
+       <details>
+       <summary>NS_POD_CIDR</summary>
+         Reserve a Pod subnet for Netscaler by providing podcidr.
+       </details>
+       <details>
+       <summary>NODE_CNI_CIDR</summary>
+         CIDR of kubernetes cluster nodes from where each node  gets its own pod CIDR.
+       </details>
     
 3. Deploy Citrix Node Controller. 
 
@@ -51,6 +59,15 @@
         
            kubectl create -f citrix-k8s-node-controller.yaml
 
-   This pulls the latest image and brings up the Citrix Node Controller.
+   This pulls the latest stable  image and brings up the Citrix Node Controller.
                 
-   Official Citrix Node Controller docker images is <span style="color:red"> `quay.io/citrix/citrix-k8s-node-controller:latest` </span> 
+   Official Citrix Node Controller docker images is <span style="color:red"> `quay.io/citrix/citrix-k8s-node-controller:latest` </span>
+
+4.  Apply config map input.
+    
+    Citrix Node controller is ready for operation and must be waiting for this input. Config map input is manadatory for citrix node controller to work. Config Map is used for controlling the citrix node operation via **operation** data field.
+
+    ```
+	kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
+    ```
+    if **operation** data field in config map is ADD, Citrix node controller creates routing configuration on netscaler. If its **DELETE**, citrix node controller remove the routing configuration added earlier. 
