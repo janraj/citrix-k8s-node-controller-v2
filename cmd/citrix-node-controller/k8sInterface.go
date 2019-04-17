@@ -420,7 +420,7 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 	DaemonSet := &appv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixrouteaddpod",
-			Namespace: "citrix",
+			Namespace: "kube-system",
 			Labels: map[string]string{
 				"app":  "citrixrouteaddpod",
 			},
@@ -461,7 +461,7 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 			},
 		},
 	}
-	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	_, err := api.Client.AppsV1().DaemonSets("kube-system").Create(DaemonSet)
 	if err != nil {
 		klog.Error("[ERROR] Failed to create daemon set:", err)
 	}
@@ -482,7 +482,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 	DaemonSet := &appv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixroutecleanuppod",
-			Namespace: "citrix",
+			Namespace: "kube-system",
 			Labels: map[string]string{
 				"app":  "citrixroutecleanuppod",
 			},
@@ -523,7 +523,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 			},
 		},
 	}
-	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	_, err := api.Client.AppsV1().DaemonSets("kube-system").Create(DaemonSet)
 	if err != nil {
 		klog.Error("[ERROR] Failed to create daemon set:", err)
 	}
@@ -638,7 +638,6 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "citrixdummypod"+strconv.Itoa(podcount),
-                        Namespace: "citrix",
 		},
 		Spec: v1.PodSpec{
 			ServiceAccountName: "citrix-node-controller",

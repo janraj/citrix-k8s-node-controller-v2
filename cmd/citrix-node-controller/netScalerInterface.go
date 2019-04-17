@@ -97,14 +97,19 @@ func (c *NitroClient) doHTTPRequest(method string, url string, bytes *bytes.Buff
 	return respHandler(resp)
 }
 
-func (c *NitroClient) createResource(resourceType string, resourceJSON []byte) ([]byte, error) {
+func (c *NitroClient) createResource(resourceType string, resourceJSON []byte, operation string) ([]byte, error) {
 	log.Println("[DEBUG] go-nitro: Creating resource of type ", resourceType)
 	url := c.url + resourceType
+	if (operation == "unset") {
+		url = url + "?action=unset"	
+	}else if strings.Contains(resourceType, "netprofile") {
+                url = url + "?idempotent=yes"
+        }
 	log.Println("[TRACE] go-nitro: url is ", url)
 	return c.doHTTPRequest("POST", url, bytes.NewBuffer(resourceJSON), createResponseHandler)
 }
 
-func (c *NitroClient) AddResource(resourceType string, name string, resourceStruct interface{}) (string, error) {
+func (c *NitroClient) AddResource(resourceType string, name string, resourceStruct interface{}, operation string) (string, error) {
 
 	nsResource := make(map[string]interface{})
 	nsResource[resourceType] = resourceStruct
@@ -116,7 +121,7 @@ func (c *NitroClient) AddResource(resourceType string, name string, resourceStru
 
 	log.Printf("[TRACE] go-nitro: Resourcejson is " + string(resourceJSON))
 
-	body, err := c.createResource(resourceType, resourceJSON)
+	body, err := c.createResource(resourceType, resourceJSON, operation)
 	if err != nil {
 		return "", fmt.Errorf("[ERROR] go-nitro: Failed to create resource of type %s, name=%s, err=%s", resourceType, name, err)
 	}
@@ -147,6 +152,10 @@ type Route struct {
 type Nsip struct {
 	Ipaddress string `json:"ipaddress,omitempty"`
 	Netmask   string `json:"netmask,omitempty"`
+}
+type Netprofile struct {
+	Name string `json:"name,omitempty"`
+	Srcip string `json:"ipaddress,omitempty"`
 }
 
 type Arp struct {
@@ -187,12 +196,24 @@ func createIngressDeviceClient(input *ControllerInput) *NitroClient {
 }
 func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 	for ind, _ := range config.keys {
-		result, err := client.AddResource(config.keys[ind], "ADD", config.items[config.keys[ind]])
+		result, err := client.AddResource(config.keys[ind], "ADD", config.items[config.keys[ind]], "add")
 		if err != nil {
 			fmt.Println("Result  err ", result, err)
 		}
 	}
 }
+
+func BindToNetProfile(controllerInput *ControllerInput, client *NitroClient){
+	var args = map[string]string{"name": "k8s", "srcip": controllerInput.IngressDevicePodIP}
+	result, err := client.AddResource("netprofile", "UPDATE", args, "set")
+	fmt.Println("Result  netprofile ", result, err)
+}
+func UnBindNetProfile(controllerInput *ControllerInput, client *NitroClient){
+	var args = map[string]string{"name": "k8s", "srcip": "true"}
+	result, err := client.AddResource("netprofile", "UNSET", args, "unset")
+	fmt.Println("Result  netprofile ", result, err)
+}
+
 func DeleteIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 	for ind, _ := range config.keys {
 		err := client.DeleteResourceWithArgsMap(config.keys[ind], "", config.items[config.keys[ind]].(map[string]string))

@@ -134,6 +134,7 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	}
 	configPack.Set("nsip", &nsip)
 	AddIngressDeviceConfig(&configPack, ingressDevice)
+	BindToNetProfile(controllerInput, ingressDevice)
 }
 /*
 *************************************************************************************************
@@ -144,12 +145,14 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 *************************************************************************************************
  */
 func DeleteVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
+	
+	UnBindNetProfile(controllerInput, ingressDevice)
 
 	configPack := ConfigPack{}
 	vxlanargs := map[string]string{"id": controllerInput.IngressDeviceVxlanIDs}
 	configPack.Set("vxlan", vxlanargs)
    
-	nsipargs := map[string]string{"ipaddress": node.NextPodAddress}
+	nsipargs := map[string]string{"ipaddress": node.IngressDevicePodIP}
 	configPack.Set("nsip", nsipargs)
 	DeleteIngressDeviceConfig(&configPack, ingressDevice)
 }
