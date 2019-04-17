@@ -152,7 +152,7 @@ func DeleteVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	vxlanargs := map[string]string{"id": controllerInput.IngressDeviceVxlanIDs}
 	configPack.Set("vxlan", vxlanargs)
    
-	nsipargs := map[string]string{"ipaddress": node.IngressDevicePodIP}
+	nsipargs := map[string]string{"ipaddress": controllerInput.IngressDevicePodIP}
 	configPack.Set("nsip", nsipargs)
 	DeleteIngressDeviceConfig(&configPack, ingressDevice)
 }
