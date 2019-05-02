@@ -10,13 +10,17 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: citrix-node-controller
 rules:
+  - apiGroups: ["*"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods"]
+    verbs: ["get", "list", "watch", "create"]
+
   - apiGroups: [""]
-    resources: ["services", "endpoints", "ingresses", "pods", "secrets", "nodes", "configmaps"]
-    verbs: ["*"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods"]
+    verbs: ["get", "list", "watch", "create"]
 
   - apiGroups: ["extensions"]
-    resources: ["ingresses", "ingresses/status"]
-    verbs: ["*"]
+    resources: ["daemonsets", "ingresses/status"]
+    verbs: ["get", "list", "watch", "create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
