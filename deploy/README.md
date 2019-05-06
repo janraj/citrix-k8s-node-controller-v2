@@ -17,6 +17,7 @@
 
  2. **Update the following env variables, for Citrix Node Controller bringup.**
 
+    1. "Mandatory" Arguments:
        <details>
        <summary>NS_IP</summary>
 
@@ -29,20 +30,20 @@
          ```
        </details>
        <details>
-       <summary>NS_SNIP</summary>
-
-         NS_SNIP used for configuring as VTEP IP when cluster CNI as flannel and it is also used for creating dummy node in kubernetes cluster  
-
-       </details>
-       <details>
        <summary>NS_USER and NS_PASSWORD</summary>
 
          This is for authenticating with NetScaler if it has non default username and password. We can directly pass username/password or use Kubernetes secrets.
+         Please refer our [guide](https://github.com/citrix/citrix-k8s-ingress-controller/blob/master/docs/command-policy.md) for configuring a non default NetScaler username and password.
+         
+         Given Yaml uses k8s secrets. Following steps helps to create secrets to be used in yaml.
 
-       </details>
-       <details>
-       <summary>NS_VTEP_MAC</summary>
-         NetScaler MAC of VTEP IP, which is required for Flannel CNI.
+         Create secrets on Kubernetes for NS_USER and NS_PASSWORD
+         Kubernetes secrets can be created by using 'kubectl create secret'.  
+
+                 kubectl create secret  generic nslogin --from-literal=username='nsroot' --from-literal=password='nsroot'
+
+         >**Note:** If you are using different secret name rather than nslogin, you have to update the "name" field in the yaml. 
+
        </details>
        <details>
        <summary>NS_POD_CIDR</summary>
@@ -53,6 +54,24 @@
          CIDR of kubernetes cluster nodes from where each node  gets its own pod CIDR.
        </details>
     
+    2. "Optional" Arguments:
+
+       <details>
+       <summary>NS_VTEP_MAC</summary>
+         Optional Field. CNC automatically detect from NetScaler. If its failed, CNC has to restart with explict  NS_VTEP_MAC.
+       </details>
+       <details>
+       <summary>NS_VTEP_IP</summary>
+         Optional Field. If require different IP as VTEP than NS_IP, then please provide.
+       </details>
+       <details>
+       <summary>NS_VXLAN_ID</summary>
+         Optional Field. Default Value is 1. This argument is used in case of flannel. If flannel uses different VXLAN_ID, we have to provide this information.
+       </details>
+       <details>
+       <summary>K8S_VXLAN_PORT</summary>
+         Optional Field. If VXLAN port is other than 8472, you have to use this field to pass to Citrix Node Controller.
+       </details>
 3. **Deploy Citrix Node Controller.**
 
    Deploy Citrix Node Controller  on kubernetes by using 'kubectl create' command

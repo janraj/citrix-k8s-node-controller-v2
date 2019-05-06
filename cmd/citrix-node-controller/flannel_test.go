@@ -21,12 +21,12 @@ func TestGetDummyNode(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	fmt.Println("Current test filename: " + filename)
 	nsObj, api := getClientAndDeviceInfo()
-	nsObj.DummyNodeLabel = "DUMMY"
+	nsObj.DummyNodeLabel = "citrixadc"
 	node := api.GetDummyNode(nsObj)
 	if node == nil {
 		node1 := api.CreateDummyNode(nsObj)
 		if node1 == nil {
-			t.Error("Created Node and Get nodes are different ")
+			t.Error("Failed to create Dummy Node")
 		}
 	} else {
 		node = api.CreateDummyNode(nsObj)

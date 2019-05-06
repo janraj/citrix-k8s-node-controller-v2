@@ -51,32 +51,62 @@ type ControllerInput struct {
 	NodesInfo             map[string]*Node
 }
 
+
+func IsValidIP4(ipAddress string) bool {
+        ipaddress := strings.Split(ipAddress, ".")
+	firstOctect, err := strconv.Atoi(ipaddress[0])
+	if (err != nil) {
+		return false
+	}
+        if (firstOctect <0 || firstOctect >255) {
+		return false
+	}
+	secondOctect, err := strconv.Atoi(ipaddress[1])
+	if (err != nil) {
+		return false
+	}
+        if (secondOctect<0 || secondOctect>255) {
+		return false
+	}
+	thirdOctect, err := strconv.Atoi(ipaddress[2]); 
+	if (err != nil) {
+		return false
+	}
+        if (thirdOctect<0 || thirdOctect>255) {
+		return false
+	}
+	fourthOctect, err := strconv.Atoi(ipaddress[3]); 
+
+	if (err != nil) {
+		return false
+	}
+        if (fourthOctect<0 || fourthOctect>255) {
+		return false
+	}
+	return true
+}
+
+
 func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff := ControllerInput{}
 	InputDataBuff.IngressDeviceIP = os.Getenv("NS_IP")
 	configError := 0
 	if len(InputDataBuff.IngressDeviceIP) == 0 {
-		klog.Error("[ERROR] Ingress Device IP (NS_IP) is required")
+		klog.Error("[ERROR] Ingress Device IP (NS_IP) is required, SNIP with Management access enabled")
 		configError = 1
 	}
-	InputDataBuff.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
-	if len(InputDataBuff.IngressDeviceVtepMAC) == 0 {
-		klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required")
+	if (!(IsValidIP4(InputDataBuff.IngressDeviceIP))) {
+		klog.Error("[ERROR] Invalid IP ")
 		configError = 1
 	}
-	InputDataBuff.IngressDeviceUsername = os.Getenv("NS_LOGIN")
+	InputDataBuff.IngressDeviceUsername = os.Getenv("NS_USER")
 	if len(InputDataBuff.IngressDeviceUsername) == 0 {
-		klog.Error("[ERROR] Ingress Device user name (NS_LOGIN) is  required")
+		klog.Error("[ERROR] Ingress Device user name (NS_USER) is  required")
 		configError = 1
 	}
 	InputDataBuff.IngressDevicePassword = os.Getenv("NS_PASSWORD")
 	if len(InputDataBuff.IngressDevicePassword) == 0 {
 		klog.Error("[ERROR] Ingress Device password (NS_PASSWORD) is  required")
-		configError = 1
-	}
-	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_SNIP")
-	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
-		klog.Info("[ERROR] Ingress Device VTEP IP (NS_SNIP)  is empty")
 		configError = 1
 	}
 	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
@@ -94,6 +124,15 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.NodeSubnetMask = ConvertPrefixLenToMask(nodecidr[1])
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
+		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+	}
+	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
+	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
+		klog.Info("[INFO] Ingress Device VTEP IP (NS_VTEP_IP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
+		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP 
+	}
+	if (!(IsValidIP4(InputDataBuff.IngressDeviceVtepIP))) {
+		klog.Error("[ERROR] Invalid IP ")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
@@ -125,9 +164,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 *   APIName :  WaitForConfigMapInput                                                            *
 *   Input   :  Takes API server session called client and Controller input.             	*
 *   Output  :  Wait till COnfig map applied and extract Operation field to proceed further.	*
-*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
-*              events and store in node cache. Based on the events type, call back functions    *
-*	       Will execute and perform the desired tasks.					*
+*   Descr   :  This API waits till Citrix Node Config map input is supplied.                    *
 *************************************************************************************************
  */
 func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *ControllerInput){
@@ -140,6 +177,28 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
 			klog.Info("[INFO] Config Map Data", ConfigMapData)
 			ControllerInputObj.CncOperation = ConfigMapData["operation"]
 			break;
+		}
+	}
+}
+/*
+*************************************************************************************************
+*   APIName :  MonitorIngressDevice                                                             *
+*   Input   :  Takes API server session called client.             			        *
+*   Output  :  Invokes call back functions.	                                                *
+*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
+*            events and store in node cache. Based on the events type, call back functions      *
+*	     Will execute and perform the desired tasks.					*
+*************************************************************************************************
+ */
+func MonitorIngressDevice(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	vtepMac := getClusterInterfaceMac(IngressDeviceClient, "route", "", "")
+	if (vtepMac != "error"){
+		ControllerInputObj.IngressDeviceVtepMAC = vtepMac
+	} else {
+		ControllerInputObj.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
+		if len(ControllerInputObj.IngressDeviceVtepMAC) == 0 {
+			klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required")
+			panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with NS_VTEP_MAC as CNC could not get it from NS")
 		}
 	}
 }

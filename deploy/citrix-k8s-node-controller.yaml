@@ -12,11 +12,11 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["daemonsets", "nodes", "configmaps", "pods"]
-    verbs: ["get", "list", "watch", "create"]
+    verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: [""]
     resources: ["daemonsets", "nodes", "configmaps", "pods"]
-    verbs: ["get", "list", "watch", "create"]
+    verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: ["extensions"]
     resources: ["daemonsets", "ingresses/status"]
@@ -83,10 +83,6 @@ spec:
           value: "xxxxx"
         - name: NS_PASSWORD
           value: "xxxxx"
-        - name: NS_SNIP
-          value: "xxx.xxx.xxx.xxx"
-        - name: NS_VTEP_MAC
-          value: "xx:xx:xx:xx:xx:xx"
         - name: NS_POD_CIDR
           value: "xxx.xxx.xxx.xxx/xx"
         - name: NODE_CNI_CIDR
