@@ -23,8 +23,7 @@
 
          This is must for Citrix Node Controller to configure the NetScaler appliance. Citrix Node Controller uses NS_IP for configuration needs. NS_IP can be of,
          ```
-            NSIP for standalone NetScaler  
-            SNIP for HA (Management access has to be enabled) 
+            SNIP for HA/Standalone (Management access has to be enabled) 
             CLIP for Cluster
          
          ```
@@ -46,31 +45,32 @@
 
        </details>
        <details>
-       <summary>NS_POD_CIDR</summary>
-         Reserve a Pod subnet for Netscaler by providing podcidr.
+       <summary>NODE_CNI_CIDR</summary>
+         Provide the node CIDR of the Kubernetes cluster. 
        </details>
        <details>
-       <summary>NODE_CNI_CIDR</summary>
-         CIDR of kubernetes cluster nodes from where each node  gets its own pod CIDR.
+       <summary>NS_POD_CIDR</summary>
+	  Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster.  For example, if the node CIDR in the Kubernetes cluster is 10.244.0.0/16 and the pod CIDRs of the nodes are 10.244.0.1/24, 10.244.1.1/24, 10.244.2.1/24. You can provide a pod CIDR 10.244.254.1/24 that is not allocated to the nodes.
        </details>
     
     2. "Optional" Arguments:
 
        <details>
        <summary>NS_VTEP_MAC</summary>
-         Optional Field. CNC automatically detect from NetScaler. If its failed, CNC has to restart with explict  NS_VTEP_MAC.
+	 Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. The VTEP_MAC is the default gateway MAC address.
        </details>
        <details>
        <summary>NS_VTEP_IP</summary>
-         Optional Field. If require different IP as VTEP than NS_IP, then please provide.
+	 Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
        </details>
        <details>
        <summary>NS_VXLAN_ID</summary>
-         Optional Field. Default Value is 1. This argument is used in case of flannel. If flannel uses different VXLAN_ID, we have to provide this information.
+	  This argument is only applicable for Flannel CNI. If Flannel uses a different VXLAN_ID, Use this argument to provide the VXLAN_ID
+          Default Value is 1.
        </details>
        <details>
        <summary>K8S_VXLAN_PORT</summary>
-         Optional Field. If VXLAN port is other than 8472, you have to use this field to pass to Citrix Node Controller.
+	 If the Kubernetes cluster VXLAN port is other than 8472, you have to provide the Kubernetes VXLAN port number using this parameter.
        </details>
 3. **Deploy Citrix Node Controller.**
 
