@@ -79,7 +79,7 @@ spec:
         env:
         - name: NS_IP
           value: "xxxxxxx"
-        - name: NS_LOGIN
+        - name: NS_USER
           value: "xxxxx"
         - name: NS_PASSWORD
           value: "xxxxx"
