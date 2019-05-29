@@ -111,7 +111,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
 	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
-		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR ")
+		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (NS_POD_CIDR)")
 		configError = 1
 	}
 	InputDataBuff.NodeCIDR = os.Getenv("NODE_CNI_CIDR")
