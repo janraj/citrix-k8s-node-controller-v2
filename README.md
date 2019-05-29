@@ -64,12 +64,12 @@ Citrix Node controller monitor the node events and establish a route between the
 
 Citrix Node controller can be used in two flavour. 
 
-	1) In cluster CNC Configuration [As a Process].
-	2) Out of cluster CNC Configuration [As a Micro Service]
+1) In cluster CNC Configuration [As a Process].
+2) Out of cluster CNC Configuration [As a Micro Service]
 
 In cluster configuration is recomended for production. Out of cluster configuration can be used for easy development.
   
-#### **As Processs***
+#### **As Processs**
 ```
 
         1) Download/Clone the citrix-k8s-node-controller.
@@ -80,8 +80,9 @@ In cluster configuration is recomended for production. Out of cluster configurat
         3) Deploy Config MAP.
 		kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
 ```
-#### **As Micro Service***
-	Please refer [deployment](deploy/README.md) page for running CNC as a micro service inside the cluster.
+#### **As Micro Service**
+
+Please refer [deployment](deploy/README.md) page for running CNC as a micro service inside the cluster.
 
 ## **Questions**
 For questions and support the following channels are available:
