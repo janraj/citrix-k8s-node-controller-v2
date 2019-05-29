@@ -91,9 +91,7 @@ For questions and support the following channels are available:
 
 ## **Issues**
 Describe the Issue in Details, Collects the logs and  Use the forum mentioned below
-```
-   https://discussions.citrix.com/forum/1657-netscaler-cpx/
-```
+[Submit Issues](https://discussions.citrix.com/forum/1657-netscaler-cpx/)
 
 ## **Code of Conduct**
 This project adheres to the [Kubernetes Community Code of Conduct](https://github.com/kubernetes/community/blob/master/code-of-conduct.md). By participating in this project you agree to abide by its terms.
