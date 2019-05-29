@@ -50,23 +50,23 @@
        </details>
        <details>
        <summary>NS_POD_CIDR</summary>
-	  Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster.  For example, if the node CIDR in the Kubernetes cluster is 10.244.0.0/16 and the pod CIDRs of the nodes are 10.244.0.1/24, 10.244.1.1/24, 10.244.2.1/24. You can provide a pod CIDR 10.244.254.1/24 that is not allocated to the nodes.
+         Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster.  For example, if the node CIDR in the Kubernetes cluster is 10.244.0.0/16 and the pod CIDRs of the nodes are 10.244.0.1/24, 10.244.1.1/24, 10.244.2.1/24. You can provide a pod CIDR 10.244.254.1/24 that is not allocated to the nodes.
        </details>
     
     2. "Optional" Arguments:
 
        <details>
        <summary>NS_VTEP_MAC</summary>
-	 Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. The VTEP_MAC is the default gateway MAC address.
+         Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. The VTEP_MAC is the default gateway MAC address.
        </details>
        <details>
        <summary>NS_VTEP_IP</summary>
-	 Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
+        Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
        </details>
        <details>
        <summary>NS_VXLAN_ID</summary>
-	  This argument is only applicable for Flannel CNI. If Flannel uses a different VXLAN_ID, Use this argument to provide the VXLAN_ID
-          Default Value is 1.
+        This argument is only applicable for Flannel CNI. If Flannel uses a different VXLAN_ID, Use this argument to provide the VXLAN_ID.<br>
+        Default Value is 1.
        </details>
        <details>
        <summary>K8S_VXLAN_PORT</summary>
