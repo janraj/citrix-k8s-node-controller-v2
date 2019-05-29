@@ -9,6 +9,8 @@ test:
 	 go test -v ../... -coverprofile cp.out 
 	 go tool cover -html=cp.out -o cover.html
 
+run:
+	 cd ../cmd/citrix-node-controller/;go run .
 coverage:
 	 go test -v ../... -coverprofile=coverage.txt -covermode=atomic
 
