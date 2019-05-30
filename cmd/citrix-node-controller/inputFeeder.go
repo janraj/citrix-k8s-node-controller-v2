@@ -284,7 +284,7 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
  */
 func MonitorIngressDevice(IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	vtepMac := getClusterInterfaceMac(IngressDeviceClient)
-	if (vtepMac != "error" and vtepMac != "00:00:00:00:00:00"){
+	if (vtepMac != "error" && vtepMac != "00:00:00:00:00:00"){
 		ControllerInputObj.IngressDeviceVtepMAC = vtepMac
 	} else {
 		ControllerInputObj.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
