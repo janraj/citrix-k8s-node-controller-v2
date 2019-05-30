@@ -88,6 +88,89 @@ func IsValidIP4(ipAddress string) bool {
 	return true
 }
 
+func FetchOptionalInputs(InputDataBuff *ControllerInput) *ControllerInput {
+	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
+	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
+		klog.Info("[INFO] Ingress Device VTEP IP (NS_VTEP_IP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
+		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP 
+	}
+	if (!(IsValidIP4(InputDataBuff.IngressDeviceVtepIP))) {
+		klog.Error("[ERROR] Invalid IP ")
+		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+	}
+	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
+        subnet := strings.Split(splitString[0], ".") 
+        InputDataBuff.IngressDevicePodIP = subnet[0] + "." + subnet[1] + "." +subnet[2]+".1"
+        InputDataBuff.IngressDevicePodSubnet = subnet[0] + "." + subnet[1] + "." +subnet[2]+".0/"+splitString[1]
+	InputDataBuff.DummyNodeLabel = "citrixadc"
+        InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
+	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
+	if InputDataBuff.IngressDeviceVxlanID == 0 {
+		klog.Info("[INFO] VXLAN ID has Not Given, taking 1 as default VXLAN_ID (flannel uses 1 as default)")
+		InputDataBuff.IngressDeviceVxlanID = 1
+		InputDataBuff.IngressDeviceVxlanIDs = "1"
+	}
+        InputDataBuff.IngressDeviceVRIDs = os.Getenv("NS_VRID")
+	InputDataBuff.IngressDeviceVRID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVRIDs)
+	if InputDataBuff.IngressDeviceVRID == 0 {
+		klog.Info("[INFO] VRID has Not Given, taking 99 as default VRID")
+		InputDataBuff.IngressDeviceVRID = 99
+		InputDataBuff.IngressDeviceVRIDs = "99"
+	}
+	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
+	if InputDataBuff.ClusterCNIPort == 0 {
+		klog.Info("[INFO] K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
+		InputDataBuff.ClusterCNIPort = 8472
+	}
+	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
+	if len(InputDataBuff.ClusterCNI) == 0 {
+		klog.Infof("[INFO] Cluster CNI information is Empty")
+	}
+	InputDataBuff.NodesInfo = make(map[string]*Node)
+	return InputDataBuff
+}
+
+func FetchMandatoryInputs() *ControllerInput {
+	InputDataBuff := ControllerInput{}
+	InputDataBuff.IngressDeviceIP = os.Getenv("NS_IP")
+	configError := 0
+	if len(InputDataBuff.IngressDeviceIP) == 0 {
+		klog.Error("[ERROR] Ingress Device IP (NS_IP) is required, SNIP with Management access enabled")
+		configError = 1
+	}
+	if (!(IsValidIP4(InputDataBuff.IngressDeviceIP))) {
+		klog.Error("[ERROR] Invalid IP ")
+		configError = 1
+	}
+	InputDataBuff.IngressDeviceUsername = os.Getenv("NS_USER")
+	if len(InputDataBuff.IngressDeviceUsername) == 0 {
+		klog.Error("[ERROR] Ingress Device user name (NS_USER) is  required")
+		configError = 1
+	}
+	InputDataBuff.IngressDevicePassword = os.Getenv("NS_PASSWORD")
+	if len(InputDataBuff.IngressDevicePassword) == 0 {
+		klog.Error("[ERROR] Ingress Device password (NS_PASSWORD) is  required")
+		configError = 1
+	}
+	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
+	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
+		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (NS_POD_CIDR)")
+		configError = 1
+	}
+	InputDataBuff.NodeCIDR = os.Getenv("NODE_CNI_CIDR")
+	if len(InputDataBuff.NodeCIDR) == 0 {
+		klog.Infof("[ERROR] Provide Node subnet CIDR (NODE_CNI_CIDR: 10.241.0.0/16)")
+		configError = 1
+	}
+	nodecidr := strings.Split(InputDataBuff.NodeCIDR, "/")
+	//InputDataBuff.NodeSubnet
+	InputDataBuff.NodeSubnetMask = ConvertPrefixLenToMask(nodecidr[1])
+	if configError == 1 {
+		klog.Error("Unable to get the above mentioned input from YAML")
+		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
+	}
+	return &InputDataBuff
+}
 
 func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff := ControllerInput{}
@@ -201,7 +284,7 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
  */
 func MonitorIngressDevice(IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	vtepMac := getClusterInterfaceMac(IngressDeviceClient)
-	if (vtepMac != "error"){
+	if (vtepMac != "error" and vtepMac != "00:00:00:00:00:00"){
 		ControllerInputObj.IngressDeviceVtepMAC = vtepMac
 	} else {
 		ControllerInputObj.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
