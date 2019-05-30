@@ -59,6 +59,7 @@
        <summary>NS_VTEP_MAC</summary>
 
          Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. Please configure [VMAC](https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html) on the Interface towards kubernetes cluster.
+       </details>
        <details>
        <summary>NS_VTEP_IP</summary>
         Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
