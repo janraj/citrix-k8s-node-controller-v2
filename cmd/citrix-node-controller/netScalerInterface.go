@@ -467,11 +467,12 @@ func getInterfaceMac(IngressDeviceClient *NitroClient, ifnum string) string{
                 ret[i] = v.(map[string]interface{})
         }
 	mac:= ret[0]["mac"].(string)
-        log.Println("[INFO MAC]", mac)
-	return mac
+	vmac:= ret[0]["vmac"].(string)
+        log.Println("[INFO MAC]=", mac, "\t VMAC=",vmac)
+	return vmac
 }
 
-func getClusterInterfaceMac(IngressDeviceClient *NitroClient, resourceType string, resourceName string, args string) string{
+func getClusterInterfaceMac(IngressDeviceClient *NitroClient) string{
 	gateway := getNetScalerDefaultGateway(IngressDeviceClient)
 	if (gateway == "error"){
 		return "error"
@@ -480,12 +481,7 @@ func getClusterInterfaceMac(IngressDeviceClient *NitroClient, resourceType strin
 	if (ifnum == "error"){
 		return "error"
 	}
-	//primaryIP := getPrimaryNodeIP(IngressDeviceClient)
-	//if (primaryIP == "error"){
-	//	return "error"
-	//}
 	VtepMac	:= getInterfaceMac(IngressDeviceClient, ifnum)
-	log.Println("[JANRAJ]", VtepMac)
 	return VtepMac
 }
 func getPrimaryNodeIP(IngressDeviceClient *NitroClient) string{

@@ -42,6 +42,8 @@ type ControllerInput struct {
 	IngressDevicePodSubnet  string
 	IngressDeviceVxlanID  int
 	IngressDeviceVxlanIDs  string
+	IngressDeviceVRID  int
+	IngressDeviceVRIDs  string
 	NodeSubnetMask	      string
 	NodeCIDR	      string
 	ClusterCNI            string
@@ -147,6 +149,13 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		InputDataBuff.IngressDeviceVxlanID = 1
 		InputDataBuff.IngressDeviceVxlanIDs = "1"
 	}
+        InputDataBuff.IngressDeviceVRIDs = os.Getenv("NS_VRID")
+	InputDataBuff.IngressDeviceVRID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVRIDs)
+	if InputDataBuff.IngressDeviceVRID == 0 {
+		klog.Info("[INFO] VRID has Not Given, taking 99 as default VRID")
+		InputDataBuff.IngressDeviceVRID = 99
+		InputDataBuff.IngressDeviceVRIDs = "99"
+	}
 	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
 	if InputDataBuff.ClusterCNIPort == 0 {
 		klog.Info("[INFO] K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
@@ -190,8 +199,8 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
-func MonitorIngressDevice(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
-	vtepMac := getClusterInterfaceMac(IngressDeviceClient, "route", "", "")
+func MonitorIngressDevice(IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	vtepMac := getClusterInterfaceMac(IngressDeviceClient)
 	if (vtepMac != "error"){
 		ControllerInputObj.IngressDeviceVtepMAC = vtepMac
 	} else {

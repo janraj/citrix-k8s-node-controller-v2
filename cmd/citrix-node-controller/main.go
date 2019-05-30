@@ -9,14 +9,16 @@ func InitCitrixNodeController() error {
 	klog.Info("Initializing CNC")
 	return nil
 }
+func 
 func StartCitrixNodeController() {
 	controllerInput := FetchCitrixNodeControllerInput()
+	ingressDevice := createIngressDeviceClient(controllerInput)
+        MonitorIngressDevice(ingressDevice, controllerInput)
+
 	api, err := CreateK8sApiserverClient()
 	if err != nil {
 		klog.Fatal("[ERROR] K8s Client Error", err)
 	}
-	ingressDevice := createIngressDeviceClient(controllerInput)
-        MonitorIngressDevice(api, ingressDevice, controllerInput)
 	WaitForConfigMapInput(api, controllerInput)
 	ConfigDecider(api, ingressDevice, controllerInput)
 	ConfigMapInputWatcher(api, ingressDevice, controllerInput)

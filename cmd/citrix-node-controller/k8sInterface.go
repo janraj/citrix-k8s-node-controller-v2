@@ -401,6 +401,7 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
         if (ConfigMapDataNew["operation"] == "ADD" && ConfigMapDataOld["operation"] == "DELETE"){
 	}	
         if (ConfigMapDataNew["operation"] == "DELETE" && ConfigMapDataOld["operation"] == "ADD"){
+		HandleConfigMapDeleteEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 	}	
         if (ConfigMapDataNew["operation"] == "DELETE" && ConfigMapDataOld["operation"] == "DELETE"){
 	}	

@@ -25,6 +25,7 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 		},
 		Spec: v1.NodeSpec{
                        PodCIDR: obj.IngressDevicePodCIDR,
+		       Unschedulable: true, 
                 },
                 Status: v1.NodeStatus{
 			Conditions: []v1.NodeCondition{
