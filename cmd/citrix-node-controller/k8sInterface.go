@@ -399,6 +399,19 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 		}
 	}	
         if (ConfigMapDataNew["operation"] == "ADD" && ConfigMapDataOld["operation"] == "DELETE"){
+		ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
+		HandleConfigMapAddEvent(api, newobj, IngressDeviceClient, ControllerInputObj)
+		for key, value := range ConfigMapDataNew {
+			if (strings.Contains(value, ".") && strings.Contains(ConfigMapDataNew[value], ":")) {
+					klog.Info("[INFO] Key Value", key, value)
+					node.IPAddr = key
+        				node.PodAddress = value
+        				node.PodVTEP = ConfigMapDataNew[node.PodAddress]
+        				node.PodNetMask = ConvertPrefixLenToMask("24")
+        				node.PodMaskLen = "24"
+					NsInterfaceAddRoute( IngressDeviceClient, ControllerInputObj, node)
+			}
+		}
 	}	
         if (ConfigMapDataNew["operation"] == "DELETE" && ConfigMapDataOld["operation"] == "ADD"){
 		HandleConfigMapDeleteEvent(api, obj, IngressDeviceClient, ControllerInputObj)
@@ -466,6 +479,18 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 	if err != nil {
 		klog.Error("[ERROR] Failed to create daemon set:", err)
 	}
+	CLeanupHandler(api, "citrixroutecleanuppod")
+}
+func CLeanupHandler(api *KubernetesAPIServer, DaemonSet string){
+	ds, err := api.Client.AppsV1().DaemonSets("citrix").Get(DaemonSet, metav1.GetOptions{})
+	if (ds != nil){
+		falseVar := false
+		deleteOptions := &metav1.DeleteOptions{OrphanDependents: &falseVar}
+		err = api.Client.AppsV1().DaemonSets("citrix").Delete(ds.Name, deleteOptions)
+	}
+	if (err != nil) {
+		fmt.Print(err)
+	}
 }
 
 func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput){
@@ -532,6 +557,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 	ClearAllRoutes(api, obj, IngressDeviceClient, ControllerInputObj)
 
 	TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
+	CLeanupHandler(api, "citrixrouteaddpod")
 }
 
 func AddAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
