@@ -52,14 +52,14 @@
        <summary>NS_POD_CIDR</summary>
          Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster.  For example, if the node CIDR in the Kubernetes cluster is 10.244.0.0/16 and the pod CIDRs of the nodes are 10.244.0.1/24, 10.244.1.1/24, 10.244.2.1/24. You can provide a pod CIDR 10.244.254.1/24 that is not allocated to the nodes.
        </details>
-    
-    2. "Optional" Arguments:
-
        <details>
        <summary>NS_VTEP_MAC</summary>
 
          Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. Please configure [VMAC](https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html) on the Interface towards kubernetes cluster.
        </details>
+    
+    2. "Optional" Arguments:
+
        <details>
        <summary>NS_VTEP_IP</summary>
         Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
