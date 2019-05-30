@@ -73,6 +73,7 @@
        <summary>K8S_VXLAN_PORT</summary>
 	 If the Kubernetes cluster VXLAN port is other than 8472, you have to provide the Kubernetes VXLAN port number using this parameter.
        </details>
+
 3. **Deploy Citrix Node Controller.**
 
    Deploy Citrix Node Controller  on kubernetes by using 'kubectl create' command
