@@ -9,7 +9,6 @@ func InitCitrixNodeController() error {
 	klog.Info("Initializing CNC")
 	return nil
 }
-func 
 func StartCitrixNodeController() {
 	controllerInput := FetchCitrixNodeControllerInput()
 	ingressDevice := createIngressDeviceClient(controllerInput)
