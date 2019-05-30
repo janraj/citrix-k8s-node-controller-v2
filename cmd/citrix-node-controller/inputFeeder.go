@@ -194,6 +194,11 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Error("[ERROR] Ingress Device password (NS_PASSWORD) is  required")
 		configError = 1
 	}
+	InputDataBuff.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
+	if len(InputDataBuff.IngressDeviceVtepMAC) == 0 {
+		klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required. Please configure VMAC on the Interface towards kubernetes cluster and provide that VMAC as NS_VTEP_MAC (https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html).")
+		configError = 1
+	}
 	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
 	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
 		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (NS_POD_CIDR)")

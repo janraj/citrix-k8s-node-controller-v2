@@ -12,7 +12,9 @@ func InitCitrixNodeController() error {
 func StartCitrixNodeController() {
 	controllerInput := FetchCitrixNodeControllerInput()
 	ingressDevice := createIngressDeviceClient(controllerInput)
-        MonitorIngressDevice(ingressDevice, controllerInput)
+	if (len(controllerInput.IngressDeviceVtepMAC) == 0){
+        	MonitorIngressDevice(ingressDevice, controllerInput)
+	}
 
 	api, err := CreateK8sApiserverClient()
 	if err != nil {
