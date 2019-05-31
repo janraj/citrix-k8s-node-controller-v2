@@ -7,6 +7,7 @@ COPY cmd/citrix-node-controller/inputFeeder.go .
 COPY cmd/citrix-node-controller/flannel.go .
 COPY cmd/citrix-node-controller/server.go .
 COPY cmd/citrix-node-controller/main.go .
+COPY version/VERSION .
 COPY vendor .
 #RUN go get -d -v 
 RUN go build -o /go/bin/citrix-node-controller

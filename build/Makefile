@@ -1,5 +1,8 @@
-OWNER=janrajc
+OWNER=Janrajc
 IMAGE_NAME=citrix-k8s-node-controller
+VERSION_FILE="../version/VERSION"
+version=0.0.0
+
 
 .PHONY: build
 build:
@@ -14,15 +17,25 @@ run:
 coverage:
 	 go test -v ../... -coverprofile=coverage.txt -covermode=atomic
 
-publish: repo-login publish
+publish: repo-login version version-update release
 
 repo-login:
 	@docker login -u "$(QUAY_USERNAME)" -p "$(QUAY_PASSWORD)" quay.io
 
-publish:
-	@echo 'publish latest to $(DOCKER_REGISTRY)'
+version:
+	cd ../version/ && docker run --rm -v "$(PWD)/../version/":/app treeder/bump patch
+	$(eval version = $(shell cd ../ ; cat version/VERSION . )) 
+	@echo $(version)
+
+version-update:
+	cd ../ ; git add version/VERSION; git commit -m "bumped to version $(version)"; git push origin master
+
+release:
+	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
+	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):version
 	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
+	docker push $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):version
 
 clean:
 	docker rmi -f $$(docker images -q -f dangling=true) || true
