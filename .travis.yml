@@ -14,10 +14,7 @@ env:
 before_script: cd build
 jobs:
   include:
-  - stage: Unit Testing Citrix Node Controller
-    script:
-    - make test
-  - stage: Code Coverage of Citrix Node Controller
+  - stage: Unit Test with Code Coverage of Citrix Node Controller
     script:
     - make coverage
     - bash <(curl -s https://codecov.io/bash)

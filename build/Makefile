@@ -9,8 +9,10 @@ build:
 	docker build -f Dockerfile -t $(IMAGE_NAME) .. -m 4g
 	docker save -o $(IMAGE_NAME).tar $(IMAGE_NAME)
 test:
-	 go test -v ../... -coverprofile cp.out 
-	 go tool cover -html=cp.out -o cover.html
+	@echo 'Commit Message'
+	@echo $(TRAVIS_COMMIT_MESSAGE)
+	go test -v ../... -coverprofile cp.out 
+	go tool cover -html=cp.out -o cover.html
 
 run:
 	 cd ../cmd/citrix-node-controller/;go run .
@@ -29,7 +31,7 @@ version:
 
 version-update:
 	@echo 'Commit Message'
-	@echo $(TRAVIS_COMMIT_MESSAGE)'
+	@echo $(TRAVIS_COMMIT_MESSAGE)
 	cd ../ ; git add version/VERSION; git commit -m "[skip travis] bumped to version $(version)"; git push origin master
 
 release:
