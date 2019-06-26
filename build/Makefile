@@ -28,7 +28,8 @@ version:
 	@echo $(version)
 
 version-update:
-	cd ../ ; git add version/VERSION; git commit -m "bumped to version $(version)"; git push origin master
+	@echo 'Commit Message to $(TRAVIS_COMMIT_MESSAGE)'
+	cd ../ ; git add version/VERSION; git commit -m "[skip travis] bumped to version $(version)"; git push origin master
 
 release:
 	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
