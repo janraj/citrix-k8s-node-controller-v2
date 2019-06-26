@@ -29,7 +29,7 @@ version:
 
 version-update:
 	@echo 'Commit Message'
-        @echo $(TRAVIS_COMMIT_MESSAGE)'
+	@echo $(TRAVIS_COMMIT_MESSAGE)'
 	cd ../ ; git add version/VERSION; git commit -m "[skip travis] bumped to version $(version)"; git push origin master
 
 release:
