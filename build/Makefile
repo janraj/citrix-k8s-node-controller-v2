@@ -20,7 +20,7 @@ run:
 coverage:
 	go test -v ../... -coverprofile=coverage.txt -covermode=atomic
 
-publish: repo-login version-update release
+publish:
 	@echo 'Updating Version, and push image to quay'
 	$(eval version = $(shell ./gitpush.sh | tail -1))
 	@echo 'New versions $(version)'
