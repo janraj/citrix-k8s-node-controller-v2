@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 version=1.0.0
 update_version() {
   ver=$(cat ../version/VERSION)
@@ -7,23 +7,26 @@ update_version() {
   minor=$(echo $ver | cut -d. -f2)
   patch=$(echo $ver | cut -d. -f3)
   echo "Current Version $ver"
-  if [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[PATCH]" ]]; then
-    let "patch=patch+1"
-    echo "Major $major, Minor $minor, Patch $patch"
-    version=$major.$minor.$patch
-  elif [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[MINOR]" ]]; then 
-    let "patch=0"
-    let "minor=minor+1"
-    echo "Major $major, Minor $minor, Patch $patch"
-    version=$major.$minor.$patch
-  elif [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[MAJOR]" ]]; then 
-    let "patch=0"
-    let "minor=0"
-    let "major=major+1"
-    echo "Major $major, Minor $minor, Patch $patch"
-    version=$major.$minor.$patch
+  if [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[PATCH]" ]];
+  then
+	let "patch=patch+1"
+    	echo "Major $major, Minor $minor, Patch $patch"
+    	version=$major.$minor.$patch
+  elif [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[MINOR]" ]]; 
+  then 
+    	let "patch=0"
+    	let "minor=minor+1"
+    	echo "Major $major, Minor $minor, Patch $patch"
+    	version=$major.$minor.$patch
+  elif [[ ${TRAVIS_COMMIT_MESSAGE} =~ "[MAJOR]" ]]; 
+  then 
+    	let "patch=0"
+    	let "minor=0"
+    	let "major=major+1"
+    	echo "Major $major, Minor $minor, Patch $patch"
+    	version=$major.$minor.$patch
   else
-    version=0.0.0
+    	version=0.0.0
   fi
   echo "$version"
   echo "$version" > '../version/VERSION'
@@ -48,7 +51,7 @@ git_push() {
 
 update_version
 echo "New Version is $version"
-if [[ ${version} != 0.0.0 ]]; then
+if [ ${version} != 0.0.0 ]; then
  git_setup
  git_commit
  if [ $? -eq 0 ]; then
