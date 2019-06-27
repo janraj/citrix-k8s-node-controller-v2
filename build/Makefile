@@ -29,13 +29,17 @@ version-update:
 	@echo 'Updating Version'
 	$(eval version = $(shell ./gitpush.sh | tail -1))
 	@echo 'New versions $(version)'
+
+ifneq ($(version), $(error))
 release:
 	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
-ifneq ($(version), $(error))
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
 	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
 	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
+else
+release:
+	@echo 'Failed to publish latest and $(version) to $(DOCKER_REGISTRY)'
 endif
 
 clean:
