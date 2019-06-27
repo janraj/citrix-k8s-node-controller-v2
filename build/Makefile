@@ -2,6 +2,7 @@ OWNER=Janrajc
 IMAGE_NAME=citrix-k8s-node-controller
 VERSION_FILE="../version/VERSION"
 version=0.0.0
+error=0.0.0
 
 
 .PHONY: build
@@ -30,10 +31,12 @@ version-update:
 	@echo 'New versions $(version)'
 release:
 	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
+ifneq ($(version), $(error))
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
 	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
-	docker push $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
+	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
+endif
 
 clean:
 	docker rmi -f $$(docker images -q -f dangling=true) || true

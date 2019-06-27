@@ -22,10 +22,11 @@ update_version() {
     let "major=major+1"
     echo "Major $major, Minor $minor, Patch $patch"
     version=$major.$minor.$patch
+  else
+    version=0.0.0
   fi
   echo "$version"
   echo "$version" > '../version/VERSION'
-  export cnc_version=$version
 }
 
 git_setup() {
@@ -47,12 +48,14 @@ git_push() {
 
 update_version
 echo "New Version is $version"
-git_setup
-git_commit
-if [ $? -eq 0 ]; then
+if [[ ${version} != 0.0.0 ]]; then
+ git_setup
+ git_commit
+ if [ $? -eq 0 ]; then
   echo "Commit is success, pushing new version to GitHub"
   git_push
-else
+ else
   echo "Some issue with Git Commit"
+ fi
 fi
 echo "$version"
