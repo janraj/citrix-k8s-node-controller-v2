@@ -49,6 +49,15 @@ git_push() {
   git push origin master --quiet
 }
 
+push_image() {
+  echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
+  docker login -u "$(QUAY_USERNAME)" -p "$(QUAY_PASSWORD)" quay.io
+  docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
+  docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
+  docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
+  docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
+}
+
 update_version
 echo "New Version is $version"
 if [ ${version} != 0.0.0 ]; then
@@ -62,3 +71,4 @@ if [ ${version} != 0.0.0 ]; then
  fi
 fi
 echo "$version"
+push_image

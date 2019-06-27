@@ -1,7 +1,7 @@
 OWNER=Janrajc
 IMAGE_NAME=citrix-k8s-node-controller
 VERSION_FILE="../version/VERSION"
-version=0.0.0
+version=1.0.0
 error=0.0.0
 
 
@@ -21,26 +21,9 @@ coverage:
 	go test -v ../... -coverprofile=coverage.txt -covermode=atomic
 
 publish: repo-login version-update release
-
-repo-login:
-	@docker login -u "$(QUAY_USERNAME)" -p "$(QUAY_PASSWORD)" quay.io
-
-version-update:
-	@echo 'Updating Version'
+	@echo 'Updating Version, and push image to quay'
 	$(eval version = $(shell ./gitpush.sh | tail -1))
 	@echo 'New versions $(version)'
-
-ifneq ($(version), $(error))
-release:
-	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
-	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
-	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
-	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
-	docker push $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(version)
-else
-release:
-	@echo 'Failed to publish latest and $(version) to $(DOCKER_REGISTRY)'
-endif
 
 clean:
 	docker rmi -f $$(docker images -q -f dangling=true) || true
