@@ -44,6 +44,8 @@ git_commit() {
 }
 
 git_push() {
+  git remote rm origin
+  git remote add origin https://${GH_TOKEN}@github.com/janraj/citrix-k8s-node-controller.git > /dev/null 2>&1
   git push origin master --quiet
 }
 
