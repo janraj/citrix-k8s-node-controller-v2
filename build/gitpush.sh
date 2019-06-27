@@ -53,10 +53,10 @@ git_push() {
 push_image() {
   echo 'publish latest and $(version) to ${DOCKER_REGISTRY}'
   docker login -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
-  docker tag  $(IMAGE_NAME):latest ${DOCKER_REGISTRY}/$(IMAGE_NAME):latest
-  docker tag  $(IMAGE_NAME):latest ${DOCKER_REGISTRY}/$(IMAGE_NAME):$(version)
-  docker push ${DOCKER_REGISTRY}/$(IMAGE_NAME):latest
-  docker push ${DOCKER_REGISTRY}/$(IMAGE_NAME):$(version)
+  docker tag  ${IMAGE_NAME}:latest ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest
+  docker tag  ${IMAGE_NAME}:latest ${DOCKER_REGISTRY}/${IMAGE_NAME}:${version}
+  docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest
+  docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${version}
 }
 
 update_version
@@ -70,6 +70,6 @@ if [ ${version} != 0.0.0 ]; then
  else
   echo "Some issue with Git Commit"
  fi
+ push_image
 fi
 echo "$version"
-push_image
