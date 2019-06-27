@@ -15,25 +15,19 @@ test:
 	go tool cover -html=cp.out -o cover.html
 
 run:
-	 cd ../cmd/citrix-node-controller/;go run .
+	cd ../cmd/citrix-node-controller/;go run .
 coverage:
-	 go test -v ../... -coverprofile=coverage.txt -covermode=atomic
+	go test -v ../... -coverprofile=coverage.txt -covermode=atomic
 
-publish: repo-login version version-update release
+publish: repo-login version-update release
 
 repo-login:
 	@docker login -u "$(QUAY_USERNAME)" -p "$(QUAY_PASSWORD)" quay.io
 
-version:
-	cd ../version/ && docker run --rm -v "$(PWD)/../version/":/app treeder/bump patch
-	$(eval version = $(shell cd ../ ; cat version/VERSION . )) 
-	@echo $(version)
-
 version-update:
-	@echo 'Commit Message'
-	@echo $(TRAVIS_COMMIT_MESSAGE)
-	cd ../ ; git add version/VERSION; git commit -m "[skip travis] bumped to version $(version)"; git push origin master
-
+	@echo 'Updating Version'
+	$(eval version = $(shell ./gitpush.sh | tail -1))
+	@echo 'JANRAJ New versions $(version)'
 release:
 	@echo 'publish latest and $(version) to $(DOCKER_REGISTRY)'
 	docker tag  $(IMAGE_NAME):latest $(DOCKER_REGISTRY)/$(IMAGE_NAME):latest
