@@ -34,6 +34,7 @@ type ControllerInput struct {
 	State		      int 
 	IngressDeviceIP       string
 	IngressDeviceVtepMAC  string
+	IngressDeviceNetprof  string
 	IngressDeviceUsername string
 	IngressDevicePassword string
 	IngressDeviceVtepIP  string
@@ -197,6 +198,11 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
 	if len(InputDataBuff.IngressDeviceVtepMAC) == 0 {
 		klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required. Please configure VMAC on the Interface towards kubernetes cluster and provide that VMAC as NS_VTEP_MAC (https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html).")
+		configError = 1
+	}
+	InputDataBuff.IngressDeviceNetprof = os.Getenv("NS_NETPROFILE")
+	if len(InputDataBuff.IngressDeviceNetprof) == 0 {
+		klog.Error("[ERROR] Provide Netprofile name used in Citrix Ingress Controller")
 		configError = 1
 	}
 	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")

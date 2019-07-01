@@ -208,12 +208,12 @@ func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 }
 
 func BindToNetProfile(controllerInput *ControllerInput, client *NitroClient){
-	var args = map[string]string{"name": "k8s", "srcip": controllerInput.IngressDevicePodIP}
+	var args = map[string]string{"name": controllerInput.IngressDeviceNetprof, "srcip": controllerInput.IngressDevicePodIP}
 	result, err := client.AddResource("netprofile", "UPDATE", args, "set")
 	fmt.Println("Result  netprofile ", result, err)
 }
 func UnBindNetProfile(controllerInput *ControllerInput, client *NitroClient){
-	var args = map[string]string{"name": "k8s", "srcip": "true"}
+	var args = map[string]string{"name": controllerInput.IngressDeviceNetprof, "srcip": "true"}
 	result, err := client.AddResource("netprofile", "UNSET", args, "unset")
 	fmt.Println("Result  netprofile ", result, err)
 }
