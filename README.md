@@ -6,94 +6,122 @@
 [![GitHub stars](https://img.shields.io/github/stars/janraj/citrix-k8s-node-controller.svg)](https://github.com/janraj/citrix-k8s-node-controller/stargazers)
 [![HitCount](http://hits.dwyl.com/janraj/citrix-k8s-node-controller.svg)](http://hits.dwyl.com/janraj/citrix-k8s-node-controller)
 
-# **Citrix-k8s-node-controller**
-Citrix Node Controller  is a micro service which creates the network between cluster and ingress device. <span style="color:red">**Citrix Node Controller currently works only with flannel as CNI. The scope of Citrix node controller can be extended to other CNI.**</span>
+---
 
-## Table of Contents
+# Citrix k8s node controller
 
-- [Introduction](#introduction)
-- [Architecture](#architecture)
-- [How it Works](#how-it-works)
-- [Getting Started](#getting-started)
-- [Questions](#questions)
-- [Issues](#issues)
-- [Code of Conduct](#Code-of-conduct)
-- [License](#api-reference)
+Citrix K8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device. 
 
+>**Note:**
+>Citrix K8s node controller currently works only with flannel as the Container Network Interface (CNI). The scope of Citrix node controller can be extended to other CNI.
 
-## **Introduction**
-When services on Kubernetes expose to external access via the Ingress device, there has to be proper networking between the Kubernetes nodes and ingress device to route the traffic into the cluster.   This is important because the pods will be having private IP’s based on the CNI framework.  These Private IP’s will not be able to directly access from ingress device without proper network configurations. Manual configuration to ensure such reachability is troublesome in Kubernetes world.
+## Contents
 
-## **Architecture**
-This is the high-level preview of Citrix node controller architecture. Following are the main components.	
+-  [Overview](#overview)
+-  [Architecture](#architecture)
+-  [How it works](#how-it-works)
+-  [Get started](#get-started)
 
+## Overview
+
+In Kubernetes environments, when you expose the services for external access through the Ingress device, to route the traffic into the cluster, you need to appropriately configure the network between the Kubernetes nodes and the Ingress device. Configuring the network is challenging as the pods use private IP addresses based on the CNI framework. Without proper network configuration, the Ingress device cannot access these private IP addresses. Also, manually configuring the network to ensure such reachability is cumbersome in Kubernetes environments.
+
+Citrix provides a microservice called as **Citrix k8s node controller** that you can use to create the network between the cluster and the Ingress device.
+
+## Architecture
+
+The following diagram provides the high-level architecture of the Citrix K8s node controller:
 
 ![](./images/CitrixControllerArchitecture.png)
+
+The are the main components of the Citrix K8s node controller:
        <details>
        <summary>**Ingress Interface**</summary>
-	    Ingress Interface is responsible for interacting with Citrix ADC via nitro rest API. It maintains the nitro session and invokes it when required. 
+	    The **Ingress interface** component is responsible for the interaction with Citrix ADC through NITRO REST API. It maintains the NITRO sessions and invokes it when required.
        </details>
        <details>
        <summary>**K8s Interface**</summary>
-	    This module interacts with Kube API server via K8s Go Client. It ensures the availability of client and maintains a healthy client session.
+	    This **K8s Interface** component interacts with the Kube API server through K8s Go client. It ensures the availability of the client and maintains a healthy client session.
        </details>
        <details>
        <summary>**Node Watcher**</summary>
-	    The node watcher unit is used to watch the node events via K8s Interface. It responds to the node events such as node addition, deletion or modification with its call            back functions.
+	    The **Node Watcher** component monitors the node events through K8s interface. It responds to the node events such as node addition, deletion, or modification with its callback functions.
        </details>
        <details>
        <summary>**Input Feeder**</summary>
-	    It provides inputs to the config decider. Some of the inputs are auto detect and the rest are taken from the CNC deployment yaml. 
+	    The **Input Feeder** component provides inputs to the config decider. Some of the inputs are auto detected and the rest are taken from the Citrix K8s node controller deployment YAML file.
        </details>
        <details>
        <summary>**Config Decider**</summary>
-	    This segment takes inputs from both the node watcher and the input feeder and decides the best network automation required between cluster and NetScaler.
+	    The **Config Decider** component takes inputs from both the node watcher and the input feeder. Using the inputs it decides the best network automation required between the cluster and Citrix ADC.
        </details>
        <details>
        <summary>**Core**</summary>
-	    The core module interacts with node watcher and updates the corresponding config engine.  It is responsible for starting the best config engine for the corresponding             cluster.
+	    The **Core** component interacts with the node watcher and updates the corresponding config engine. It is responsible for starting the best config engine for the corresponding cluster.
+       </details>
+       <details>
+       <summary>**Config Maps**</summary>
+	    The **Config Maps** component controls the Citrix K8s node controller.  It allows you to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC.
        </details>
 
-## **How it Works**
+## How it works
 
-Citrix Node controller monitor the node events and establish a route between the node to Citrix ADC via VXLAN. Citrix Node Controller adds route on Citrix ADC when a new node joins to the cluster. Similarly when node leaves, citrix node controller removes the route from Citrix ADC. Citrix Node Controller uses VXLAN overlay between kubernetes cluster and Citrix ADC for service routing. 
+Citrix K8s node controller monitors the node events and establishes a route between the node to Citrix ADC using VXLAN. Citrix K8s node controller adds route on the Citrix ADC when a new node joins to the cluster. Similarly when a node leaves the cluster, Citrix K8s node controller removes the associated route from the Citrix ADC. Citrix K8s node controller uses VXLAN overlay between the Kubernetes cluster and Citrix ADC for service routing.
 
+## Get started
 
+Citrix K8s node controller can be used in the following two ways:
 
-## **Getting Started**
+-  In cluster Citrix K8s node controller configuration. In this configuration, the Citrix K8s node controller is run as **process**.
+-  Out of the cluster Citrix K8s node controller configuration. In this configuration, the Citrix K8s node controller is run as a **microservice**.
 
-Citrix Node controller can be used in two flavour. 
-
-1) In cluster CNC Configuration [As a Process].
-2) Out of cluster CNC Configuration [As a Micro Service]
-
-In cluster configuration is recomended for production. Out of cluster configuration can be used for easy development.
+>**Important:**
+>Citrix recommends that you use **In cluster configuration** for production. And, use the **Out of cluster configuration** for easy development.
   
-#### **As Processs**
-```
+### Using Citrix K8s node controller as a process
 
-        1) Download/Clone the citrix-k8s-node-controller.
+Before you deploy the citrix-k8s-node-controller` package, ensure that you have installed Go binary for running MIC.
 
-        2) Perform "make run" from build folder.
-                This starts the citrix node controller. Go binary has to be installed for running MIC. You have set the few inputs as Enviornment variable.
+Perform the following:
 
-        3) Deploy Config MAP.
-		kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
-```
-#### **As Micro Service**
+1.  Download or clone the `citrix-k8s-node-controller` package.
 
-Please refer [deployment](deploy/README.md) page for running CNC as a micro service inside the cluster.
+1.  
 
-## **Questions**
+        ```
+
+                1) Download/Clone the citrix-k8s-node-controller.
+
+                2) Perform "make run" from build folder.
+                        This starts the citrix node controller. Go binary has to be installed for running MIC. You have set the few inputs as Enviornment variable.
+
+                3) Deploy Config MAP.
+                        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
+        ```
+1.  Deploy the config map using the following command:
+   
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
+
+### Using Citrix K8s node controller as a microservice
+
+Refer the [deployment](deploy/README.md) page for running Citrix K8s node controller as a microservice inside the Kubernetes cluster.
+
+## Questions
+
 For questions and support the following channels are available:
-* [Citrix Discussion Forum](https://discussions.citrix.com/forum/1657-netscaler-cpx/). 
-* [NetScaler Slack Channel](https://citrixadccloudnative.slack.com/)
 
-## **Issues**
-Describe the Issue in Details, Collects the logs and  Use the [discussion](https://discussions.citrix.com/forum/1657-netscaler-cpx/) forum to raise the issue.
+-  [Citrix Discussion Forum](https://discussions.citrix.com/forum/1657-netscaler-cpx/).
 
-## **Code of Conduct**
+-  [Citrix ADC Slack Channel](https://citrixadccloudnative.slack.com/).
+
+## Issues
+
+Describe the Issue in Details, Collects the logs and Use the [discussion](https://discussions.citrix.com/forum/1657-netscaler-cpx/) forum to raise the issue.
+
+## Code of conduct
+
 This project adheres to the [Kubernetes Community Code of Conduct](https://github.com/kubernetes/community/blob/master/code-of-conduct.md). By participating in this project you agree to abide by its terms.
 
-## **License**
+## License
+
 [Apache License 2.0](./license/LICENSE)
