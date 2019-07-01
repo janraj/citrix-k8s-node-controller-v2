@@ -1,4 +1,4 @@
-# Deploy Citrix K8s node controller
+# Deploy the Citrix k8s node controller
 
 Citrix k8s node controller is controlled using a [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml). The [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml) file contains a `data.operation:` field that you can use to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC. You can use the following values for the `data.operation:` field:
 
@@ -26,7 +26,7 @@ data:
   operation: "ADD"
 ```
 
-## Deploy Citrix K8s node controller
+## Deploy the Citrix k8s node controller
 
 Perform the following:
 
@@ -64,4 +64,6 @@ Perform the following:
 
         kubectl create -f citrix-k8s-node-controller.yaml
 
-1.  Apply the [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml).
+1.  Apply the [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml) using the following command:
+
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml

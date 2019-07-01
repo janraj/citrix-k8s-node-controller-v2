@@ -10,10 +10,10 @@
 
 # Citrix k8s node controller
 
-Citrix K8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device. 
+Citrix k8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device. 
 
 >**Note:**
->Citrix K8s node controller currently works only with flannel as the Container Network Interface (CNI). The scope of Citrix node controller can be extended to other CNI.
+>Citrix k8s node controller currently works only with flannel as the Container Network Interface (CNI). The scope of Citrix node controller can be extended to other CNI.
 
 ## Contents
 
@@ -30,11 +30,11 @@ Citrix provides a microservice called as **Citrix k8s node controller** that you
 
 ## Architecture
 
-The following diagram provides the high-level architecture of the Citrix K8s node controller:
+The following diagram provides the high-level architecture of the Citrix k8s node controller:
 
 ![](./images/CitrixControllerArchitecture.png)
 
-The are the main components of the Citrix K8s node controller:
+The are the main components of the Citrix k8s node controller:
        <details>
        <summary>**Ingress Interface**</summary>
 	    The **Ingress interface** component is responsible for the interaction with Citrix ADC through NITRO REST API. It maintains the NITRO sessions and invokes it when required.
@@ -49,7 +49,7 @@ The are the main components of the Citrix K8s node controller:
        </details>
        <details>
        <summary>**Input Feeder**</summary>
-	    The **Input Feeder** component provides inputs to the config decider. Some of the inputs are auto detected and the rest are taken from the Citrix K8s node controller deployment YAML file.
+	    The **Input Feeder** component provides inputs to the config decider. Some of the inputs are auto detected and the rest are taken from the Citrix k8s node controller deployment YAML file.
        </details>
        <details>
        <summary>**Config Decider**</summary>
@@ -61,24 +61,24 @@ The are the main components of the Citrix K8s node controller:
        </details>
        <details>
        <summary>**Config Maps**</summary>
-	    The **Config Maps** component controls the Citrix K8s node controller.  It allows you to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC.
+	    The **Config Maps** component controls the Citrix k8s node controller.  It allows you to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC.
        </details>
 
 ## How it works
 
-Citrix K8s node controller monitors the node events and establishes a route between the node to Citrix ADC using VXLAN. Citrix K8s node controller adds route on the Citrix ADC when a new node joins to the cluster. Similarly when a node leaves the cluster, Citrix K8s node controller removes the associated route from the Citrix ADC. Citrix K8s node controller uses VXLAN overlay between the Kubernetes cluster and Citrix ADC for service routing.
+Citrix k8s node controller monitors the node events and establishes a route between the node to Citrix ADC using VXLAN. Citrix k8s node controller adds route on the Citrix ADC when a new node joins to the cluster. Similarly when a node leaves the cluster, Citrix k8s node controller removes the associated route from the Citrix ADC. Citrix k8s node controller uses VXLAN overlay between the Kubernetes cluster and Citrix ADC for service routing.
 
 ## Get started
 
-Citrix K8s node controller can be used in the following two ways:
+Citrix k8s node controller can be used in the following two ways:
 
--  In cluster Citrix K8s node controller configuration. In this configuration, the Citrix K8s node controller is run as **process**.
--  Out of the cluster Citrix K8s node controller configuration. In this configuration, the Citrix K8s node controller is run as a **microservice**.
+-  In cluster Citrix k8s node controller configuration. In this configuration, the Citrix k8s node controller is run as **microservice**.
+-  Out of the cluster Citrix k8s node controller configuration. In this configuration, the Citrix k8s node controller is run as a **process**.
 
 >**Important:**
 >Citrix recommends that you use **In cluster configuration** for production. And, use the **Out of cluster configuration** for easy development.
   
-### Using Citrix K8s node controller as a process
+### Using Citrix k8s node controller as a process
 
 Before you deploy the citrix-k8s-node-controller` package, ensure that you have installed Go binary for running MIC.
 
@@ -86,25 +86,17 @@ Perform the following:
 
 1.  Download or clone the `citrix-k8s-node-controller` package.
 
-1.  
+1.  Navigate to the build directory and start the `citrix-k8s-node-controller` using the following command:
 
-        ```
+        make run
 
-                1) Download/Clone the citrix-k8s-node-controller.
-
-                2) Perform "make run" from build folder.
-                        This starts the citrix node controller. Go binary has to be installed for running MIC. You have set the few inputs as Enviornment variable.
-
-                3) Deploy Config MAP.
-                        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
-        ```
 1.  Deploy the config map using the following command:
-   
+
         kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
 
-### Using Citrix K8s node controller as a microservice
+### Using Citrix k8s node controller as a microservice
 
-Refer the [deployment](deploy/README.md) page for running Citrix K8s node controller as a microservice inside the Kubernetes cluster.
+Refer the [deployment](deploy/README.md) page for running Citrix k8s node controller as a microservice inside the Kubernetes cluster.
 
 ## Questions
 
