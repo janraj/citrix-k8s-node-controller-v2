@@ -1,100 +1,69 @@
-# **Install Citrix Node Controller**
+# Deploy the Citrix k8s node controller
 
- 1. **Download the "citrix-k8s-node-controller.yaml" from the deployment Directory.**
-    ```
-      wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/citrix-k8s-node-controller.yaml?token=AMvewY7ooAOE6KZsmhr07BswqSTAj3Ilks5ceA_rwA%3D%3D
-    ```
-                        
-    This yaml creates following on a new namespace called **citrix**
+Citrix k8s node controller is controlled using a [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml). The [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml) file contains a `data.operation:` field that you can use to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC. You can use the following values for the `data.operation:` field:
 
-    * Cluster roles
-    * Cluster role bindings
-    * Service account
-    * Citrix Node Controller service
-   
-    First three are required for citrix Node controller to monitor k8s events. No changes required.
-    Next section defines environment variables required for Citrix Node Controller to configure the Citrix ADC.
+| **Value** | **Description** |
+| ----- | ----------- |
+| ADD | Citrix k8s node controller creates a routing configuration on the Citrix ADC instance. |
+| DELETE | Citrix k8s node controller deletes the routing configuration on the Citrix ADC instance. |
 
- 2. **Update the following env variables, for Citrix Node Controller bringup.**
+[config_map.yaml](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml):
 
-    1. "Mandatory" Arguments:
-       <details>
-       <summary>NS_IP</summary>
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citrix
+  labels:
+    name: citrix
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: citrix-node-controller
+  namespace: citrix
+data:
+  operation: "ADD"
+```
 
-         This is must for Citrix Node Controller to configure the NetScaler appliance. Citrix Node Controller uses NS_IP for configuration needs. NS_IP can be of,
-         ```
-            SNIP for HA/Standalone (Management access has to be enabled) 
-            CLIP for Cluster
-         
-         ```
-       </details>
-       <details>
-       <summary>NS_USER and NS_PASSWORD</summary>
+## Deploy the Citrix k8s node controller
 
-         This is for authenticating with NetScaler if it has non default username and password. We can directly pass username/password or use Kubernetes secrets.
-         Please refer our [guide](https://github.com/citrix/citrix-k8s-ingress-controller/blob/master/docs/command-policy.md) for configuring a non default NetScaler username and password.
-         
-         Given Yaml uses k8s secrets. Following steps helps to create secrets to be used in yaml.
+Perform the following:
 
-         Create secrets on Kubernetes for NS_USER and NS_PASSWORD
-         Kubernetes secrets can be created by using 'kubectl create secret'.  
+1.  Download the `citrix-k8s-node-controller.yaml` deployment file using the following command:
 
-                 kubectl create secret  generic nslogin --from-literal=username='nsroot' --from-literal=password='nsroot'
+        wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/citrix-k8s-node-controller.yaml?token=AMvewY7ooAOE6KZsmhr07BswqSTAj3Ilks5ceA_rwA%3D%3D
 
-         >**Note:** If you are using different secret name rather than nslogin, you have to update the "name" field in the yaml. 
+    The deployment file contains definitions for the following:
 
-       </details>
-       <details>
-       <summary>NODE_CNI_CIDR</summary>
-         Provide the node CIDR of the Kubernetes cluster. 
-       </details>
-       <details>
-       <summary>NS_POD_CIDR</summary>
-         Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster.  For example, if the node CIDR in the Kubernetes cluster is 10.244.0.0/16 and the pod CIDRs of the nodes are 10.244.0.1/24, 10.244.1.1/24, 10.244.2.1/24. You can provide a pod CIDR 10.244.254.1/24 that is not allocated to the nodes.
-       </details>
-       <details>
-       <summary>NS_VTEP_MAC</summary>
+    -  Cluster Role (`ClusterRole`)
 
-         Citrix k8s node controller automatically detects the Citrix ADC’s VTEP_MAC. If it fails, edit the citrix-node-controller definition and provide the VTEP_ MAC value using this parameter and restart the Citrix k8s node controller. Please configure [VMAC](https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html) on the Interface towards kubernetes cluster.
-       </details>
-       <details>
-       <summary>NS_NETPROFILE</summary>
+    -  Cluster Role Bindings (`ClusterRoleBinding`)
 
-         Provide Netprofile name which has to be same as Citrix Ingress Controller.
- 
-       </details>
-    
-    2. "Optional" Arguments:
+    -  Service Account (`ServiceAccount`)
 
-       <details>
-       <summary>NS_VTEP_IP</summary>
-        Use this argument to provide IP address as VTEP, if you do not want to use NS_IP
-       </details>
-       <details>
-       <summary>NS_VXLAN_ID</summary>
-        This argument is only applicable for Flannel CNI. If Flannel uses a different VXLAN_ID, Use this argument to provide the VXLAN_ID.<br>
-        Default Value is 1.
-       </details>
-       <details>
-       <summary>K8S_VXLAN_PORT</summary>
-          If the Kubernetes cluster VXLAN port is other than 8472, you have to provide the Kubernetes VXLAN port number using this parameter.
-       </details>
+    -  Citrix Node Controller service (`citrix-node-controller`)
 
-3. **Deploy Citrix Node Controller.**
+    You don't have to modify the definitions for `ClusterRole`, `ClusterRoleBinding`, and `ServiceAccount` definitions. The definitions are used by Citrix node controller to monitor Kubernetes events. But, in the`citrix-node-controller` definition you have to provide the values for the environment variables that is required for Citrix k8s node controller to configure the Citric ADC.
 
-   Deploy Citrix Node Controller  on kubernetes by using 'kubectl create' command
-        
-           kubectl create -f citrix-k8s-node-controller.yaml
+    You must provide values for the following environment variables in the Citrix k8s node controller service definition:
 
-   This pulls the latest stable  image and brings up the Citrix Node Controller.
-                
-   Official Citrix Node Controller docker images is <span style="color:red"> `quay.io/citrix/citrix-k8s-node-controller:latest` </span>
+    | Environment Variable | Mandatory or Optional | Description |
+    | -------------------- | --------------------- | ----------- |
+    | NS_IP | Mandatory | Citrix k8s node controller uses this IP address to configure the Citrix ADC. The NS_IP can be anyone of the following: </br> - NSIP for standalone Citrix ADC </br>- SNIP for high availability deployments (Ensure that management access is enabled) </br> - CLIP for Cluster deployments |
+    | NS_USER and NS_PASSWORD | Mandatory | The user name and password of Citrix ADC. Citrix k8s node controller uses these credentials to authenticate with Citrix ADC. You can either provide the user name and password or Kubernetes secrets. If you want to use a non-default Citrix ADC user name and password, you can [create a system user account in Citrix ADC](https://developer-docs.citrix.com/projects/citrix-k8s-ingress-controller/en/latest/deploy/deploy-cic-yaml/#create-system-user-account-for-citrix-ingress-controller-in-citrix-adc). </br> The deployment file uses Kubernetes secrets, create a secret for the user name and password using the following command: </br> `kubectl create secret  generic nslogin --from-literal=username='nsroot' --from-literal=password='nsroot'` </br> **Note**: If you want to use a different secret name other than `nslogin`, ensure that you update the `name` field in the `citrix-node-controller` definition. |
+    | NODE_CNI_CIDR | Mandatory | Provide the node [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) of the Kubernetes cluster.|
+    | NS_POD_CIDR | Mandatory | Provide a pod CIDR from the node CIDR in the Kubernetes cluster to create an overlay network between Citrix ADC and Kubernetes cluster. </br> For example, if the node CIDR in the Kubernetes cluster is `10.244.0.0/16` and the pod CIDRs of the nodes are `10.244.0.1/24`, `10.244.1.1/24`, `10.244.2.1/24`. You can provide a pod CIDR `10.244.254.1/24` that is not allocated to the nodes.|
+    | NS_VTEP_MAC | Mandatory | Provide [VMAC](https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html) that you have configured on the Citrix ADC as an interface towards your Kubernetes cluster. |
+    | NS_NETPROFILE | Mandatory | Provide the network profile (netprofile) name that you have used in the Citrix ingress controller.|
+    | NS_VTEP_IP | Optional | Use this argument to provide IP address as VTEP, if you do not want to use `NS_IP` |
+    | NS_VXLAN_ID | Optional | This argument is only applicable for Flannel CNI. If Flannel uses a different `VXLAN_ID`, Use this argument to provide the `VXLAN_ID` |
+    | K8S_VXLAN_PORT | Optional | If the Kubernetes cluster VXLAN port is other than 8472, you have to provide the Kubernetes VXLAN port number using this parameter. |
 
-4.  **Apply config map input.**
-    
-    Citrix Node controller is ready for operation and must be waiting for this input. Config map input is manadatory for citrix node controller to work. Config Map is used for controlling the citrix node operation via **operation** data field.
+1.  After you have updated the Citrix k8s node controller deployment YAML file, deploy it using the following command:
 
-    ```
-	kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
-    ```
-    if **operation** data field in config map is **ADD**, Citrix node controller creates routing configuration on netscaler. If its **DELETE**, citrix node controller remove the routing configuration added earlier. 
+        kubectl create -f citrix-k8s-node-controller.yaml
+
+1.  Apply the [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml) using the following command:
+
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
