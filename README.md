@@ -22,7 +22,7 @@ Citrix k8s node controller is a micro service provided by Citrix that creates ne
 -  [How it works](#how-it-works)
 -  [Get started](#get-started)
 -  [Issues](#issues)
--  [Code of conduct](#code of conduct)
+-  [Code of conduct](#code-of-conduct)
 -  [License](#License)
 
 ## Overview
