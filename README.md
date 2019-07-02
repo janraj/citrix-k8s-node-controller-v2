@@ -35,7 +35,7 @@ Citrix provides a microservice called as **Citrix k8s node controller** that you
 
 The following diagram provides the high-level architecture of the Citrix k8s node controller:
 
-![](./images/CitrixControllerArchitecture_v3.png)
+![](./images/CitrixControllerArchitecture.png)
 
 The are the main components of the Citrix k8s node controller:
        <details>
