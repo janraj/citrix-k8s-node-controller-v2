@@ -25,7 +25,11 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 		},
 		Spec: v1.NodeSpec{
                        PodCIDR: obj.IngressDevicePodCIDR,
-		       Unschedulable: true, 
+		       Unschedulable: true,
+		       Taints: []v1.Taint{
+				{Key: "key1", Value: "value1", Effect: "NoSchedule"},
+				{Key: "key2", Value: "value2", Effect: "NoExecute"},
+		       }, 
                 },
                 Status: v1.NodeStatus{
 			Conditions: []v1.NodeCondition{
