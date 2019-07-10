@@ -19,6 +19,7 @@ run:
 	cd ../cmd/citrix-node-controller/;go run .
 coverage:
 	go test -v ../... -coverprofile=coverage.txt -covermode=atomic
+	go tool cover -html=coverage.txt -o cover.html
 
 publish:
 	@echo 'Updating Version, and push image to quay'

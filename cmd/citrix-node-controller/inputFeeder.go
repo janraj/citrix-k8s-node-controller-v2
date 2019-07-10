@@ -88,7 +88,7 @@ func IsValidIP4(ipAddress string) bool {
 	}
 	return true
 }
-
+/*
 func FetchOptionalInputs(InputDataBuff *ControllerInput) *ControllerInput {
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
 	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
@@ -172,7 +172,7 @@ func FetchMandatoryInputs() *ControllerInput {
 	}
 	return &InputDataBuff
 }
-
+*/
 func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff := ControllerInput{}
 	InputDataBuff.IngressDeviceIP = os.Getenv("NS_IP")

@@ -2,6 +2,9 @@ package main
 
 import (
 	"testing"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stretchr/testify/assert"
 	"os"
 )
 
@@ -32,4 +35,30 @@ func TestFetchCitrixNodeControllerInput(t *testing.T) {
 	os.Setenv("NS_PASSWORD", IngressDevicePassword)
 	os.Setenv("NS_SNIP", IngressDeviceVtepIP)
 	FetchCitrixNodeControllerInput()
+}
+
+func TestWaitForConfigMapInput(t *testing.T){
+	obj, api := getClientAndDeviceInfo()
+	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
+		Data:       map[string]string{"Operation": "ADD"},
+	})
+	WaitForConfigMapInput(api, obj)
+}
+func TestMonitorIngressDevice(t *testing.T){
+	controllerInput := FetchCitrixNodeControllerInput()
+        ingressDevice := createIngressDeviceClient(controllerInput)
+	MonitorIngressDevice(ingressDevice, controllerInput)
+}
+func TestIsValidIP4(t *testing.T){
+	assert := assert.New(t)
+	assert.Equal(false, IsValidIP4("333.22.1.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("abc.22.1.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.abc.1.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.334.1.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.1.334.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.1.abc.1"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.1.1.abc"), "Invalid IP")
+	assert.Equal(false, IsValidIP4("22.1.1.1111"), "Invalid IP")
+	assert.Equal(true, IsValidIP4("22.1.1.1"), "Invalid IP")
 }
