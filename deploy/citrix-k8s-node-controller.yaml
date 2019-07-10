@@ -87,7 +87,7 @@ spec:
           value: "xxx.xxx.xxx.xxx/xx"
         - name: NODE_CNI_CIDR
           value: "xxx.xxx.xxx.xxx/xx"
-	- name: NS_VTEP_MAC
+        - name: NS_VTEP_MAC
           value: "xx:xx:xx:xx:xx:xx"
         - name: NS_NETPROFILE
           value: "xxxxx"
