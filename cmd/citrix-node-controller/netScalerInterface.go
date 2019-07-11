@@ -393,6 +393,7 @@ func getNetScalerDefaultGateway(IngressDeviceClient *NitroClient) string{
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		klog.Info("[DEBUG] go-nitro: error listing with args, trying filter")
+		return "error"
 	}
         if err = json.Unmarshal(result, &data); err != nil {
                 klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, data)
