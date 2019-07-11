@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
 	"os"
+	//"fmt"
 )
 
 func TestFetchCitrixNodeControllerInput(t *testing.T) {
@@ -48,7 +49,10 @@ func TestWaitForConfigMapInput(t *testing.T){
 func TestMonitorIngressDevice(t *testing.T){
 	controllerInput := FetchCitrixNodeControllerInput()
         ingressDevice := createIngressDeviceClient(controllerInput)
-	MonitorIngressDevice(ingressDevice, controllerInput)
+	
+	defer func() {
+		MonitorIngressDevice(ingressDevice, controllerInput)
+	}()
 }
 func TestIsValidIP4(t *testing.T){
 	assert := assert.New(t)
