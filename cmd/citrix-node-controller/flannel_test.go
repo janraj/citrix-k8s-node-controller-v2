@@ -5,6 +5,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"runtime"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func getClientAndDeviceInfo() (*ControllerInput, *KubernetesAPIServer) {
@@ -57,4 +58,19 @@ func TestInitFlannel(t *testing.T) {
 	nsObj, api := getClientAndDeviceInfo()
 	ingressDevice := createIngressDeviceClient(nsObj)
 	InitFlannel(api, ingressDevice, nsObj)
+}
+func TestTerminateFlannel(t *testing.T){
+	nsObj, api := getClientAndDeviceInfo()
+	ingressDevice := createIngressDeviceClient(nsObj)
+        TerminateFlannel(api, ingressDevice, nsObj) 
+	api.CreateDummyNode(nsObj)
+        TerminateFlannel(api, ingressDevice, nsObj) 
+}
+func TestDeleteDummyNode(t *testing.T){
+	assert := assert.New(t)
+	nsObj, api := getClientAndDeviceInfo()
+	api.CreateDummyNode(nsObj)
+	node := api.GetDummyNode(nsObj)
+	assert.Equal(true, api.DeleteDummyNode(node), "Removing the existing Node")
+	assert.Equal(false, api.DeleteDummyNode(node), "Removing the non existing Node")
 }

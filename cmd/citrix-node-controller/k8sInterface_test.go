@@ -5,8 +5,14 @@ import (
 	"k8s.io/klog"
 	"runtime"
 	"testing"
+	//"github.com/stretchr/testify/assert"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestCreateK8sApiserverClient(t *testing.T) {
+	CreateK8sApiserverClient()
+}
 func TestConvertPrefixLenToMask(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	fmt.Println("Current test filename: " + filename)
@@ -77,6 +83,36 @@ func TestGenerateNextPodAddr(t *testing.T) {
      	if (nextIP != "Error"){
 		t.Error("Expected Error, got ", nextIP)
 	}
+}
+func TestHandleConfigMapAddEvent(t *testing.T){
+	obj, api := getClientAndDeviceInfo()
+	controllerInput := FetchCitrixNodeControllerInput()
+        ingressDevice := createIngressDeviceClient(controllerInput)
+	HandleConfigMapAddEvent(api, obj, ingressDevice, controllerInput)
+
+}
+func TestHandleConfigMapDeleteEvent(t *testing.T){
+	_, api := getClientAndDeviceInfo()
+	controllerInput := FetchCitrixNodeControllerInput()
+	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
+		Data:       map[string]string{"Operation": "ADD"},
+	})
+	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
+	controllerInput.State = NetscalerInit
+        ingressDevice := createIngressDeviceClient(controllerInput)
+	HandleConfigMapDeleteEvent(api, configobj, ingressDevice, controllerInput)
+}
+func TestHandleConfigMapUpdateEvent(t *testing.T){
+	_, api := getClientAndDeviceInfo()
+	controllerInput := FetchCitrixNodeControllerInput()
+        ingressDevice := createIngressDeviceClient(controllerInput)
+	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
+		Data:       map[string]string{"Operation": "ADD"},
+	})
+	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
+	HandleConfigMapUpdateEvent(api, configobj, configobj, ingressDevice, controllerInput)
 }
 /*
 func TestCreateK8sApiserverClient(t *testing.T){

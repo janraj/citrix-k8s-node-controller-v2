@@ -54,21 +54,17 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 	return NewNode
 }
 
-/*
-*************************************************************************************************
-*   APIName :  DeleteDummyNode                                                                  *
-*   Input   :  Takes API server session called client.             			        *
-*   Output  :  Nil.				                                                *
-*   Descr   :  This API  Creates a Dummy Node on K8s CLuster.					*
-*************************************************************************************************
- */
-func (api KubernetesAPIServer) DeleteDummyNode(node *v1.Node, obj *ControllerInput){
+// DeleteDummyNode deletes the citrix adc node from kubernetes cluster.
+// It takes Node as input and return true if able to delete node else false.
+func (api KubernetesAPIServer) DeleteDummyNode(node *v1.Node) bool{
 	klog.Info("[INFO] Deleting Citrix ADC Node")
 	err := api.Client.CoreV1().Nodes().Delete(node.GetObjectMeta().GetName(), metav1.NewDeleteOptions(0))
 	if err != nil {
 		klog.Error("[ERROR] Node Deletion has failed", err)
+		return false
 	}
 	klog.Info("[INFO] Deleted Citrix ADC Node ")
+	return true
 }
 
 /*
@@ -200,8 +196,8 @@ func TerminateFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, cont
 		return 
 	}
 	node := ParseNodeEvents(api, dummyNode, ingressDevice, controllerInput)
-	node.PodNetMask = "255.255.0.0" //Automate to find next highest number
+	node.PodNetMask = controllerInput.NodeSubnetMask
 	DeleteVxlanConfig(ingressDevice, controllerInput, node)
-	api.DeleteDummyNode(dummyNode, controllerInput)
+	api.DeleteDummyNode(dummyNode)
 	controllerInput.State |= NetscalerTerminate 
 }

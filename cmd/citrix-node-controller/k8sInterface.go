@@ -110,6 +110,7 @@ func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
+/*
 func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 
 	nodeListWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "nodes", v1.NamespaceAll, fields.Everything())
@@ -129,6 +130,7 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	go nodecontroller.Run(stop)
 	return 
 }
+*/
 /*
 *************************************************************************************************
 *   APIName :  Generate Next PodCIRIP                                                           *
@@ -224,7 +226,6 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 	} 
 	return node
 }
-
 /*
 *************************************************************************************************
 *   APIName :  core_add_handler                                                                 *
@@ -234,6 +235,7 @@ func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceCli
 *	       It parses the Node event object and calls route addition for the new Node.	*
 *************************************************************************************************
  */
+/*
 func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	node := ParseNodeEvents(api, obj, IngressDeviceClient, ControllerInputObj)
 	if (node.Label != "citrixadc"){
@@ -246,7 +248,7 @@ func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClie
 		klog.Info("[INFO] Skipping Route addition for Dummy Node")
 	}
 }
-
+*/
 /*
 *************************************************************************************************
 *   APIName :  CoreDeleteHandler                                                                 *
@@ -257,6 +259,7 @@ func CoreAddHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClie
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
+/*
 func CoreDeleteHandler(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	node := ParseNodeEvents(api, obj, ingressDevice, controllerInput)
 	if (node.Label != "citrixadc"){
@@ -265,7 +268,7 @@ func CoreDeleteHandler(api *KubernetesAPIServer, obj interface{}, ingressDevice 
 		klog.Info("[ERROR] Citrix dummy node has been removed Manually")
 	}
 }
-
+*/
 /*
 *************************************************************************************************
 *   APIName :  CoreUpdateHandler                                                              *
@@ -275,11 +278,12 @@ func CoreDeleteHandler(api *KubernetesAPIServer, obj interface{}, ingressDevice 
 *	       It parses the Node event object and calls route addition for the new Node.	*
 *************************************************************************************************
  */
+/*
 func CoreUpdateHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	node := ParseNodeEvents(api, obj, IngressDeviceClient, ControllerInputObj)
 	fmt.Println("UPDATE HANDLER", node)
 }
-
+*/
 /*
 *************************************************************************************************
 *   APIName :  CoreHandler                                                                     *
@@ -290,6 +294,7 @@ func CoreUpdateHandler(api *KubernetesAPIServer, obj interface{}, IngressDeviceC
 *	     Will execute and perform the desired tasks.					*
 *************************************************************************************************
  */
+/*
 func CoreHandler(api *KubernetesAPIServer, obj interface{}, newobj interface{}, event string, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	//create a slice of ops
 
@@ -303,6 +308,7 @@ func CoreHandler(api *KubernetesAPIServer, obj interface{}, newobj interface{}, 
 		//	CoreUpdateHandler(obj, IngressDeviceClient, ControllerInputObj)
 	}
 }
+*/
 func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 	pods, err := api.Client.Core().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
@@ -560,22 +566,6 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 	CLeanupHandler(api, "citrixrouteaddpod")
 }
 
-func AddAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
-	node := new(Node)
-	ConfigMapData := make(map[string]string)
-        ConfigMapData = obj.(*v1.ConfigMap).Data
-        klog.Info("JANRAJ CONFIG MAP DATA", ConfigMapData)
-	for key, value := range ConfigMapData {
-		if (strings.Contains(value, ".")) {
-			klog.Info("[INFO] Key Value", key, value)
-        		node.PodAddress = value
-        		node.PodVTEP = ConfigMapData[node.PodAddress]
-        		node.PodNetMask = ConvertPrefixLenToMask("24")
-        		node.PodMaskLen = "24"
-			NsInterfaceAddRoute(ingressDevice, controllerInput, node)
-		}
-	}	
-}
 func ClearAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
 	node := new(Node)
 	ConfigMapData := make(map[string]string)
@@ -823,5 +813,21 @@ func getNodesMissingPod() ([]string, error) {
 	}
 
 	return nodesMissingDSPods, nil
+}
+func AddAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput){
+	node := new(Node)
+	ConfigMapData := make(map[string]string)
+        ConfigMapData = obj.(*v1.ConfigMap).Data
+        klog.Info("CONFIG MAP DATA", ConfigMapData)
+	for key, value := range ConfigMapData {
+		if (strings.Contains(value, ".")) {
+			klog.Info("[INFO] Key Value", key, value)
+        		node.PodAddress = value
+        		node.PodVTEP = ConfigMapData[node.PodAddress]
+        		node.PodNetMask = ConvertPrefixLenToMask("24")
+        		node.PodMaskLen = "24"
+			NsInterfaceAddRoute(ingressDevice, controllerInput, node)
+		}
+	}	
 }
 */
