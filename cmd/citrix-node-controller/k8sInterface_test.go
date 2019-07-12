@@ -10,9 +10,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+/*
 func TestCreateK8sApiserverClient(t *testing.T) {
 	CreateK8sApiserverClient()
-}
+}*/
+
 func TestConvertPrefixLenToMask(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	fmt.Println("Current test filename: " + filename)
@@ -58,13 +60,11 @@ func TestConvertPrefixLenToMask(t *testing.T) {
 func TestConfigDecider(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	fmt.Println("Current test filename: " + filename)
-	ControllerInputObj := FetchCitrixNodeControllerInput()
-	nsobj, api := getClientAndDeviceInfo()
+	input, nsobj, api := getClientAndDeviceInfo()
 	if err != nil {
 		klog.Fatal("K8s Client Error", err, nsobj)
 	}
-	IngressDeviceClient := createIngressDeviceClient(ControllerInputObj)
-	ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
+	ConfigDecider(api, nsobj, input)
 }
 func TestGenerateNextPodAddr(t *testing.T) {
 	nextIP := GenerateNextPodAddr("10.10.10.10")
@@ -85,34 +85,28 @@ func TestGenerateNextPodAddr(t *testing.T) {
 	}
 }
 func TestHandleConfigMapAddEvent(t *testing.T){
-	obj, api := getClientAndDeviceInfo()
-	controllerInput := FetchCitrixNodeControllerInput()
-        ingressDevice := createIngressDeviceClient(controllerInput)
-	HandleConfigMapAddEvent(api, obj, ingressDevice, controllerInput)
+	input, obj, api := getClientAndDeviceInfo()
+	HandleConfigMapAddEvent(api, obj, obj, input)
 
 }
 func TestHandleConfigMapDeleteEvent(t *testing.T){
-	_, api := getClientAndDeviceInfo()
-	controllerInput := FetchCitrixNodeControllerInput()
+	input, obj, api := getClientAndDeviceInfo()
 	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
 		Data:       map[string]string{"Operation": "ADD"},
 	})
 	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
-	controllerInput.State = NetscalerInit
-        ingressDevice := createIngressDeviceClient(controllerInput)
-	HandleConfigMapDeleteEvent(api, configobj, ingressDevice, controllerInput)
+	input.State = NetscalerInit
+	HandleConfigMapDeleteEvent(api, configobj, obj, input)
 }
 func TestHandleConfigMapUpdateEvent(t *testing.T){
-	_, api := getClientAndDeviceInfo()
-	controllerInput := FetchCitrixNodeControllerInput()
-        ingressDevice := createIngressDeviceClient(controllerInput)
+	input, obj, api := getClientAndDeviceInfo()
 	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
 		Data:       map[string]string{"Operation": "ADD"},
 	})
 	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
-	HandleConfigMapUpdateEvent(api, configobj, configobj, ingressDevice, controllerInput)
+	HandleConfigMapUpdateEvent(api, configobj, configobj, obj, input)
 }
 /*
 func TestCreateK8sApiserverClient(t *testing.T){
@@ -135,7 +129,7 @@ func TestCitrixNodeWatcher(t *testing.T){
 }*/
 /*
 func TestCoreHandler(t *testing.T){
-	controllerInput, api := getClientAndDeviceInfo()
+	nsobj, api := getClientAndDeviceInfo()
 	ingressDevice := createIngressDeviceClient(controllerInput)
 
 	event := "ADD"

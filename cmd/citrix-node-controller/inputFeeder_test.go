@@ -39,12 +39,12 @@ func TestFetchCitrixNodeControllerInput(t *testing.T) {
 }
 
 func TestWaitForConfigMapInput(t *testing.T){
-	obj, api := getClientAndDeviceInfo()
+	input, _, api := getClientAndDeviceInfo()
 	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
 		Data:       map[string]string{"Operation": "ADD"},
 	})
-	WaitForConfigMapInput(api, obj)
+	WaitForConfigMapInput(api, input)
 }
 /*
 func TestMonitorIngressDevice(t *testing.T){
