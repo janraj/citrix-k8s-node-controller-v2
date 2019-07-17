@@ -108,6 +108,20 @@ func TestHandleConfigMapUpdateEvent(t *testing.T){
 	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	HandleConfigMapUpdateEvent(api, configobj, configobj, obj, input)
 }
+func TestParseNodeEvents(t *testing.T){
+	input, nitro, api := getClientAndDeviceInfo()
+        api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
+                ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
+                Data:       map[string]string{"Operation": "ADD"},
+        })
+	node := api.CreateDummyNode(input)
+	ParseNodeEvents(api, node, nitro, input)
+	node.Spec.PodCIDR = ""
+	node.Labels["com.citrix.nodetype"] = "citrix"
+	ParseNodeEvents(api, node, nitro, input)
+	api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
+}
+
 /*
 func TestCreateK8sApiserverClient(t *testing.T){
 	func() {
