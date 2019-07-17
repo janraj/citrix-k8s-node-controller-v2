@@ -10,10 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-/*
-func TestCreateK8sApiserverClient(t *testing.T) {
-	CreateK8sApiserverClient()
-}*/
 
 func TestConvertPrefixLenToMask(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
@@ -121,49 +117,3 @@ func TestParseNodeEvents(t *testing.T){
 	ParseNodeEvents(api, node, nitro, input)
 	api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 }
-
-/*
-func TestCreateK8sApiserverClient(t *testing.T){
-	func() {
-                defer func() {
-                        if r := recover(); r == nil {
-                                t.Errorf("CreateK8sApiserverClient Input should have panicked!")
-                        }
-                }()
-                // This function should cause a panic
-		CreateK8sApiserverClient()
-        }()
-
-}
-func TestCitrixNodeWatcher(t *testing.T){
-	
-	controllerInput, api := getClientAndDeviceInfo()
-	ingressDevice := createIngressDeviceClient(controllerInput)
-	CitrixNodeWatcher(api, ingressDevice, controllerInput)
-}*/
-/*
-func TestCoreHandler(t *testing.T){
-	nsobj, api := getClientAndDeviceInfo()
-	ingressDevice := createIngressDeviceClient(controllerInput)
-
-	event := "ADD"
-	obj := api.GetDummyNode(controllerInput)	
-	newobj := api.GetDummyNode(controllerInput)	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "ADD"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "ADD"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "DELETE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "DELETE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "DELETE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "UPDATE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "UPDATE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-	event = "UPDATE"	
-	CoreHandler(api, obj, newobj, event, ingressDevice, controllerInput)
-}*/
