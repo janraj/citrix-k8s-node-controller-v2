@@ -86,7 +86,7 @@ func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
 	 	        klog.Error("[ERROR] Did not find valid kube config info")
-			klog.Fatal(err)
+			return nil, err
 		}
 	}
 
