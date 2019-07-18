@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/tls"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,9 +35,9 @@ func NewNitroClient(obj *ControllerInput) *NitroClient {
 	c.username = obj.IngressDeviceUsername
 	c.password = obj.IngressDevicePassword
 	transport := &http.Transport{
-                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-        }
-        c.client = &http.Client{Transport: transport}
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c.client = &http.Client{Transport: transport}
 	return c
 }
 
@@ -104,11 +104,11 @@ func (c *NitroClient) doHTTPRequest(method string, url string, bytes *bytes.Buff
 func (c *NitroClient) createResource(resourceType string, resourceJSON []byte, operation string) ([]byte, error) {
 	klog.Info("[DEBUG] go-nitro: Creating resource of type ", resourceType)
 	url := c.url + resourceType
-	if (operation == "unset") {
-		url = url + "?action=unset"	
-	}else if strings.Contains(resourceType, "netprofile") {
-                url = url + "?idempotent=yes"
-        }
+	if operation == "unset" {
+		url = url + "?action=unset"
+	} else if strings.Contains(resourceType, "netprofile") {
+		url = url + "?idempotent=yes"
+	}
 	klog.Info("[TRACE] go-nitro: url is ", url)
 	return c.doHTTPRequest("POST", url, bytes.NewBuffer(resourceJSON), createResponseHandler)
 }
@@ -158,7 +158,7 @@ type Nsip struct {
 	Netmask   string `json:"netmask,omitempty"`
 }
 type Netprofile struct {
-	Name string `json:"name,omitempty"`
+	Name  string `json:"name,omitempty"`
 	Srcip string `json:"ipaddress,omitempty"`
 }
 
@@ -199,7 +199,7 @@ func createIngressDeviceClient(input *ControllerInput) *NitroClient {
 	return client
 }
 func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
-	for ind, _ := range config.keys {
+	for ind := range config.keys {
 		result, err := client.AddResource(config.keys[ind], "ADD", config.items[config.keys[ind]], "add")
 		if err != nil {
 			fmt.Println("Result  err ", result, err)
@@ -207,19 +207,19 @@ func AddIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 	}
 }
 
-func BindToNetProfile(controllerInput *ControllerInput, client *NitroClient){
+func BindToNetProfile(controllerInput *ControllerInput, client *NitroClient) {
 	var args = map[string]string{"name": controllerInput.IngressDeviceNetprof, "srcip": controllerInput.IngressDevicePodIP}
 	result, err := client.AddResource("netprofile", "UPDATE", args, "set")
 	fmt.Println("Result  netprofile ", result, err)
 }
-func UnBindNetProfile(controllerInput *ControllerInput, client *NitroClient){
+func UnBindNetProfile(controllerInput *ControllerInput, client *NitroClient) {
 	var args = map[string]string{"name": controllerInput.IngressDeviceNetprof, "srcip": "true"}
 	result, err := client.AddResource("netprofile", "UNSET", args, "unset")
 	fmt.Println("Result  netprofile ", result, err)
 }
 
 func DeleteIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
-	for ind, _ := range config.keys {
+	for ind := range config.keys {
 		err := client.DeleteResourceWithArgsMap(config.keys[ind], "", config.items[config.keys[ind]].(map[string]string))
 		if err != nil {
 			fmt.Println("Err ", err)
@@ -385,137 +385,137 @@ func deleteResponseHandler(resp *http.Response) ([]byte, error) {
 	}
 }
 
-func getNetScalerDefaultGateway(IngressDeviceClient *NitroClient) string{
-	var data map[string]interface{}        
+func getNetScalerDefaultGateway(IngressDeviceClient *NitroClient) string {
+	var data map[string]interface{}
 	url := IngressDeviceClient.url + "route"
-        url = url + "?args=network:0.0.0.0,netmask:0.0.0.0"
+	url = url + "?args=network:0.0.0.0,netmask:0.0.0.0"
 
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		klog.Info("[DEBUG] go-nitro: error listing with args, trying filter")
 		return "error"
 	}
-        if err = json.Unmarshal(result, &data); err != nil {
-                klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, data)
+	if err = json.Unmarshal(result, &data); err != nil {
+		klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, data)
 		return "error"
-        }
-        rsrcs, ok := data["route"]
-        if !ok || rsrcs == nil {
+	}
+	rsrcs, ok := data["route"]
+	if !ok || rsrcs == nil {
 		klog.Info("[ERROR]")
 		return "error"
-        }
-        resources := data["route"].([]interface{})
-        ret := make([]map[string]interface{}, len(resources), len(resources))
-        for i, v := range resources {
-                ret[i] = v.(map[string]interface{})
-        }
+	}
+	resources := data["route"].([]interface{})
+	ret := make([]map[string]interface{}, len(resources), len(resources))
+	for i, v := range resources {
+		ret[i] = v.(map[string]interface{})
+	}
 	var gateway string = ret[0]["gateway"].(string)
-        log.Println("[INFO] gateway", gateway)
+	log.Println("[INFO] gateway", gateway)
 	return gateway
 }
 
-func getDefaultDatewayInterface(IngressDeviceClient *NitroClient, gateway string) string{
-	var arpdata map[string]interface{}        
+func getDefaultDatewayInterface(IngressDeviceClient *NitroClient, gateway string) string {
+	var arpdata map[string]interface{}
 	url := IngressDeviceClient.url + "arp"
 	arg := fmt.Sprintf("IPAddress:%s", gateway)
-        url = url + "?filter=" + arg
+	url = url + "?filter=" + arg
 
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		log.Println("[DEBUG] go-nitro: error listing with args, trying filter")
 	}
-        if err = json.Unmarshal(result, &arpdata); err != nil {
-                klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, arpdata)
+	if err = json.Unmarshal(result, &arpdata); err != nil {
+		klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, arpdata)
 		return "error"
-        }
-        rsrcs, ok := arpdata["arp"]
-        if !ok || rsrcs == nil {
+	}
+	rsrcs, ok := arpdata["arp"]
+	if !ok || rsrcs == nil {
 		log.Printf("[ERROR]")
-                return "error"
-        }
-        resources := arpdata["arp"].([]interface{})
-        ret := make([]map[string]interface{}, len(resources), len(resources))
-        for i, v := range resources {
-                ret[i] = v.(map[string]interface{})
-        }
-        ifnum := ret[0]["ifnum"].(string)
-        log.Println("[INFO ifnum]", ifnum)
+		return "error"
+	}
+	resources := arpdata["arp"].([]interface{})
+	ret := make([]map[string]interface{}, len(resources), len(resources))
+	for i, v := range resources {
+		ret[i] = v.(map[string]interface{})
+	}
+	ifnum := ret[0]["ifnum"].(string)
+	log.Println("[INFO ifnum]", ifnum)
 	return ifnum
 }
 
-func getInterfaceMac(IngressDeviceClient *NitroClient, ifnum string) string{
-	var ifdata map[string]interface{}        
+func getInterfaceMac(IngressDeviceClient *NitroClient, ifnum string) string {
+	var ifdata map[string]interface{}
 	url := IngressDeviceClient.url + "Interface"
 	ifnums := strings.Split(ifnum, "/")
-        url = url + "/"+ifnums[0]+"%252F"+ifnums[1]
+	url = url + "/" + ifnums[0] + "%252F" + ifnums[1]
 
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		log.Println("[DEBUG] go-nitro: error listing with args, trying filter")
 	}
-        if err = json.Unmarshal(result, &ifdata); err != nil {
-                klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, ifdata)
+	if err = json.Unmarshal(result, &ifdata); err != nil {
+		klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, ifdata)
 		return "error"
-        }
-        rsrcs, ok := ifdata["Interface"]
-        if !ok || rsrcs == nil {
+	}
+	rsrcs, ok := ifdata["Interface"]
+	if !ok || rsrcs == nil {
 		log.Printf("[ERROR]")
-                return "error"
-        }
-        resources := ifdata["Interface"].([]interface{})
-        ret := make([]map[string]interface{}, len(resources), len(resources))
-        for i, v := range resources {
-                ret[i] = v.(map[string]interface{})
-        }
-	mac:= ret[0]["mac"].(string)
-	vmac:= ret[0]["vmac"].(string)
-        log.Println("[INFO MAC]=", mac, "\t VMAC=",vmac)
+		return "error"
+	}
+	resources := ifdata["Interface"].([]interface{})
+	ret := make([]map[string]interface{}, len(resources), len(resources))
+	for i, v := range resources {
+		ret[i] = v.(map[string]interface{})
+	}
+	mac := ret[0]["mac"].(string)
+	vmac := ret[0]["vmac"].(string)
+	log.Println("[INFO MAC]=", mac, "\t VMAC=", vmac)
 	return vmac
 }
 
-func getClusterInterfaceMac(IngressDeviceClient *NitroClient) string{
+func getClusterInterfaceMac(IngressDeviceClient *NitroClient) string {
 	gateway := getNetScalerDefaultGateway(IngressDeviceClient)
-	if (gateway == "error"){
+	if gateway == "error" {
 		return "error"
 	}
-        ifnum  := getDefaultDatewayInterface(IngressDeviceClient, gateway)
-	if (ifnum == "error"){
+	ifnum := getDefaultDatewayInterface(IngressDeviceClient, gateway)
+	if ifnum == "error" {
 		return "error"
 	}
-	VtepMac	:= getInterfaceMac(IngressDeviceClient, ifnum)
+	VtepMac := getInterfaceMac(IngressDeviceClient, ifnum)
 	return VtepMac
 }
-func getPrimaryNodeIP(IngressDeviceClient *NitroClient) string{
-	var hanode map[string]interface{}        
+func getPrimaryNodeIP(IngressDeviceClient *NitroClient) string {
+	var hanode map[string]interface{}
 	url := IngressDeviceClient.url + "hanode"
-	log.Println("[JANRAJ]",url)
-	log.Println("[JANRAJ CJ]",url)
+	log.Println("[JANRAJ]", url)
+	log.Println("[JANRAJ CJ]", url)
 
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		log.Println("[DEBUG] go-nitro: error listing with args, trying filter")
 	}
-        if err = json.Unmarshal(result, &hanode); err != nil {
-                klog.Info("[JANRAJ ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, hanode)
+	if err = json.Unmarshal(result, &hanode); err != nil {
+		klog.Info("[JANRAJ ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, hanode)
 		return "error"
-        }
-        rsrcs, ok := hanode["hanode"]
-        if !ok || rsrcs == nil {
+	}
+	rsrcs, ok := hanode["hanode"]
+	if !ok || rsrcs == nil {
 		log.Printf("[JANRAJ ERROR]")
-                return "error"
-        }
-        resources := hanode["hanode"].([]interface{})
-        ret := make([]map[string]interface{}, len(resources), len(resources))
-        for i, v := range resources {
-                ret[i] = v.(map[string]interface{})
+		return "error"
+	}
+	resources := hanode["hanode"].([]interface{})
+	ret := make([]map[string]interface{}, len(resources), len(resources))
+	for i, v := range resources {
+		ret[i] = v.(map[string]interface{})
 		state := ret[i]["state"].(string)
-		if (state == "Primary") {
+		if state == "Primary" {
 			log.Println("[JANRAJ] PRIMARY", ret[i]["ipaddress"])
-			
-		}else if (state == "Secondary"){
+
+		} else if state == "Secondary" {
 			log.Println("[JANRAJ] SECONDARY", ret[i]["ipaddress"])
 		}
-		
-        }
+
+	}
 	return "error"
 }

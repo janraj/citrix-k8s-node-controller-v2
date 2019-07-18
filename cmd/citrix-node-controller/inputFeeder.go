@@ -16,18 +16,18 @@ var (
 type Node struct {
 	HostName   string `json:"hostname,omitempty"`
 	IPAddr     string `json:"address,omitempty"`
-	ExternalIPAddr     string `json:"address,omitempty"`
+	ExternalIPAddr     string `json:"externalip,omitempty"`
 	PodCIDR    string `json:"podcidr,omitempty"`
 	PodVTEP    string `json:"podvtep,omitempty"`
-	PodNetMask string `json:"podcidr,omitempty"`
+	PodNetMask string `json:"podnetmask,omitempty"`
 	PodAddress string `json:"podaddress,omitempty"`
 	NextPodAddress string `json:"nextpodaddress,omitempty"`
 	PodMaskLen string `json:"prefix, omitempty"`
 	Type       string `json:"podvtep,omitempty"`
-	VxlanPort  string `json:"prefix, omitempty"`
+	VxlanPort  string `json:"vxlanport, omitempty"`
 	Count      int    `json:"count,omitempty"`
 	Label     string `json:"label,omitempty"`
-	Role     string `json:"label,omitempty"`
+	Role     string `json:"role,omitempty"`
 }
 
 type ControllerInput struct {
