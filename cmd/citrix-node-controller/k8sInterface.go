@@ -29,12 +29,13 @@ var (
 	podcount   = 0
 )
 
-//This is interface for Kubernetes API Server
+// This is interface for Kubernetes API Server
 type KubernetesAPIServer struct {
 	Suffix string
 	Client kubernetes.Interface
 }
 
+// This for go client
 type Controller struct {
 	indexer  cache.Indexer
 	queue    workqueue.RateLimitingInterface
@@ -46,15 +47,7 @@ type QueueUpdate struct {
 	Force bool
 }
 
-/*
-*************************************************************************************************
-*   APIName :  ConvertPrefixLenToMask                                                           *
-*   Input   :  Prefix Length. 								        *
-*   Output  :  Return Net Mask in dotted decimal.	                                        *
-*   Descr   :  This API takes Prefix length and generate coresponding dotted Decimal            *
-*	       notation of net mask						  		*
-*************************************************************************************************
- */
+// ConvertPrefixLenToMask convert the prefix len to netmask (dotted) format.
 func ConvertPrefixLenToMask(prefixLen string) string {
 	len, _ := strconv.Atoi(prefixLen)
 	netmask := (uint32)(^(1<<(32-(uint32)(len)) - 1))
@@ -65,18 +58,7 @@ func ConvertPrefixLenToMask(prefixLen string) string {
 	return netmaskdot
 }
 
-/*
-*************************************************************************************************
-*   APIName :  CreateK8sApiserverClient                                                         *
-*   Input   :  Nil. 								              	*
-*   Output  :  Return Kubernetes APIserver session.	                                        *
-*   Descr   :  This API creates a session with kube api server which can be used for   		*
-*              wathing  different events. Does not take any input as APi Func parameter.	*
-*	       This API automatically get API server informations if the binary running  	*
-*	       inside the cluster. If Binary is running outside cluster, cluster kube config    *
-*              file must have to be in local nodes $HOME/.kube/config  location                 *
-*************************************************************************************************
- */
+// This creates go client. 
 func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 	klog.Info("[INFO] Creating API Client")
 	api := &KubernetesAPIServer{}
@@ -101,16 +83,6 @@ func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 }
 
 /*
-*************************************************************************************************
-*   APIName :  NodeWatcher                                                                      *
-*   Input   :  Takes API server session called client.             			        *
-*   Output  :  Invokes call back functions.	                                                *
-*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
-*            events and store in node cache. Based on the events type, call back functions      *
-*	     Will execute and perform the desired tasks.					*
-*************************************************************************************************
- */
-/*
 func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 
 	nodeListWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "nodes", v1.NamespaceAll, fields.Everything())
@@ -131,15 +103,7 @@ func CitrixNodeWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClien
 	return
 }
 */
-/*
-*************************************************************************************************
-*   APIName :  Generate Next PodCIRIP                                                           *
-*   Input   :  Podaddr in dotted decimal notation. 						*
-*   Output  :  Return Net Mask in dotted decimal.	                                        *
-*   Descr   :  This API takes Prefix length and generate coresponding dotted Decimal            *
-*	       notation of net mask						  		*
-*************************************************************************************************
- */
+// GenerateNextPodAddr genrate next higher valid IP.
 func GenerateNextPodAddr(PodAddr string) string {
 	oct := strings.Split(PodAddr, ".")
 	oct3, _ := strconv.Atoi(oct[3])
@@ -152,14 +116,7 @@ func GenerateNextPodAddr(PodAddr string) string {
 	return nextaddr
 }
 
-/*
-*************************************************************************************************
-*   APIName :  GetNodeAddress                                           	                *
-*   Input   :  Takes Node object.					             		*
-*   Output  :  Return Internal IP, External IP and Hostname.					*
-*   Descr   :  This API Gets the Address info of the Node if present 				*
-*************************************************************************************************
- */
+// GetNodeAddress extract the IP address from Node object.
 func GetNodeAddress(node v1.Node) (string, string, string) {
 	var InternalIP, ExternalIP, HostName string
 	for _, addr := range node.Status.Addresses {
@@ -177,14 +134,7 @@ func GetNodeAddress(node v1.Node) (string, string, string) {
 	return InternalIP, ExternalIP, HostName
 }
 
-/*
-*************************************************************************************************
-*   APIName :  ParseNodeEvents                                                                  *
-*   Input   :  Takes Node object, IngressDeviceObject and InputData.             		*
-*   Output  :  Return Node Object.						                *
-*   Descr   :  This API  Parses the object and prepare node object. 				*
-*************************************************************************************************
- */
+// ParseNodeEvents Parses the node object and store the fields to Node.
 func ParseNodeEvents(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) *Node {
 	node := new(Node)
 	node.Role = ""

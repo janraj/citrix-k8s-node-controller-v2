@@ -14,6 +14,7 @@ var (
 	NetscalerTerminate = 0x00000010
 )
 
+// Node structure keeps teh parsed information of a Node Object
 type Node struct {
 	HostName       string `json:"hostname,omitempty"`
 	IPAddr         string `json:"address,omitempty"`
@@ -31,6 +32,7 @@ type Node struct {
 	Role           string `json:"role,omitempty"`
 }
 
+// ControllerInput is the inputs passed to Citrix Node Controller
 type ControllerInput struct {
 	State                  int
 	IngressDeviceIP        string
@@ -55,6 +57,7 @@ type ControllerInput struct {
 	NodesInfo              map[string]*Node
 }
 
+// This function validate given input IP and return error if its not IPv4 standard
 func IsValidIP4(ipAddress string) bool {
 	ipaddress := strings.Split(ipAddress, ".")
 	firstOctect, err := strconv.Atoi(ipaddress[0])
@@ -174,6 +177,8 @@ func FetchMandatoryInputs() *ControllerInput {
 	return &InputDataBuff
 }
 */
+
+// FetchCitrixNodeControllerInput parses whole input provided by the user and store into controller input
 func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff := ControllerInput{}
 	InputDataBuff.IngressDeviceIP = os.Getenv("NS_IP")
@@ -264,14 +269,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	return &InputDataBuff
 }
 
-/*
-*************************************************************************************************
-*   APIName :  WaitForConfigMapInput                                                            *
-*   Input   :  Takes API server session called client and Controller input.             	*
-*   Output  :  Wait till COnfig map applied and extract Operation field to proceed further.	*
-*   Descr   :  This API waits till Citrix Node Config map input is supplied.                    *
-*************************************************************************************************
- */
+// This waits for teh config map input. This function keep CNC for getting COnfig map input.
 func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *ControllerInput) {
 	klog.Info("[INFO] Waiting for the Config Map input...")
 	for {
@@ -286,16 +284,7 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
 	}
 }
 
-/*
-*************************************************************************************************
-*   APIName :  MonitorIngressDevice                                                             *
-*   Input   :  Takes API server session called client.             			        *
-*   Output  :  Invokes call back functions.	                                                *
-*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
-*            events and store in node cache. Based on the events type, call back functions      *
-*	     Will execute and perform the desired tasks.					*
-*************************************************************************************************
- */
+// This monitor netscaler and get network details
 func MonitorIngressDevice(IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	vtepMac := getClusterInterfaceMac(IngressDeviceClient)
 	if vtepMac != "error" && vtepMac != "00:00:00:00:00:00" {
