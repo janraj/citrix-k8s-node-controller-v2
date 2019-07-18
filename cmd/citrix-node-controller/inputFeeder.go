@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Flags which keep track of CNC states
 var (
 	NetscalerInit      = 0x00000008
 	NetscalerTerminate = 0x00000010
@@ -22,9 +23,9 @@ type Node struct {
 	PodNetMask     string `json:"podnetmask,omitempty"`
 	PodAddress     string `json:"podaddress,omitempty"`
 	NextPodAddress string `json:"nextpodaddress,omitempty"`
-	PodMaskLen     string `json:"prefix, omitempty"`
+	PodMaskLen     string `json:"prefix,omitempty"`
 	Type           string `json:"podvtep,omitempty"`
-	VxlanPort      string `json:"vxlanport, omitempty"`
+	VxlanPort      string `json:"vxlanport,omitempty"`
 	Count          int    `json:"count,omitempty"`
 	Label          string `json:"label,omitempty"`
 	Role           string `json:"role,omitempty"`

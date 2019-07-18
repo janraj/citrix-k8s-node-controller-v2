@@ -697,7 +697,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	//}
 	configMaps, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	if err != nil {
-		fmt.Errorf("ConfigMap Get API error: %v \n pod: %v", configMaps, err)
+		fmt.Errorf("ConfigMap Get API error: %+v \n pod: %+v", configMaps, err)
 	}
 	if configMaps != nil {
 		ConfigMapData := make(map[string]string)

@@ -7,10 +7,10 @@ import (
 	//"github.com/stretchr/testify/assert"
 	//"net/http/httptest"
 	//"net/http/httptest"
-	"github.com/stretchr/testify/assert"
-	"net/http/httptest"
-	"net/http"
 	"context"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
 	//"crypto/tls"
 	"net"
 )
@@ -28,90 +28,86 @@ func TestCreateIngressDeviceClient(t *testing.T) {
 
 func TestCreateResponseHandler(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(200)
-    			res.Write([]byte("body"))
+		res.WriteHeader(200)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _:= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _:= http.DefaultClient.Do(req)
+	req, _ := http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ := http.DefaultClient.Do(req)
 
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
+
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(400)
-    			res.Write([]byte("body"))
+		res.WriteHeader(400)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
+
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(404)
-    			res.Write([]byte("body"))
+		res.WriteHeader(404)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
 
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(409)
-    			res.Write([]byte("body"))
+		res.WriteHeader(409)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
 
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(207)
-    			res.Write([]byte("body"))
+		res.WriteHeader(207)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
 
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(707)
-    			res.Write([]byte("body"))
+		res.WriteHeader(707)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
-	
 
 	testServer = httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-    			res.WriteHeader(207)
-    			res.Write([]byte("body"))
+		res.WriteHeader(207)
+		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
 
-	req, _= http.NewRequest(http.MethodGet, testServer.URL, nil)
-	res, _= http.DefaultClient.Do(req)
+	req, _ = http.NewRequest(http.MethodGet, testServer.URL, nil)
+	res, _ = http.DefaultClient.Do(req)
 	createResponseHandler(res)
 	readResponseHandler(res)
 	deleteResponseHandler(res)
@@ -130,7 +126,7 @@ func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
 
 	return cli, s.Close
 }
-func TestGetPrimaryNodeIP(t *testing.T){
+func TestGetPrimaryNodeIP(t *testing.T) {
 	_, nitro, _ := getClientAndDeviceInfo()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "key", r.Header.Get("Key"))
@@ -139,13 +135,12 @@ func TestGetPrimaryNodeIP(t *testing.T){
 	})
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
-	
-        	
+
 	nitro.client = httpClient
 
 	getPrimaryNodeIP(nitro)
 }
-func TestGetClusterInterfaceMac(t *testing.T){
+func TestGetClusterInterfaceMac(t *testing.T) {
 	_, nitro, _ := getClientAndDeviceInfo()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "key", r.Header.Get("Key"))
@@ -154,12 +149,11 @@ func TestGetClusterInterfaceMac(t *testing.T){
 	})
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
-	
-        	
+
 	nitro.client = httpClient
 	getClusterInterfaceMac(nitro)
 }
-func TestGetInterfaceMac(t *testing.T){
+func TestGetInterfaceMac(t *testing.T) {
 	_, nitro, _ := getClientAndDeviceInfo()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "key", r.Header.Get("Key"))
@@ -168,12 +162,11 @@ func TestGetInterfaceMac(t *testing.T){
 	})
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
-	
-        	
+
 	nitro.client = httpClient
 	getInterfaceMac(nitro, "1/1")
 }
-func TestGetDefaultDatewayInterface(t *testing.T){
+func TestGetDefaultDatewayInterface(t *testing.T) {
 	_, nitro, _ := getClientAndDeviceInfo()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "key", r.Header.Get("Key"))
@@ -182,11 +175,11 @@ func TestGetDefaultDatewayInterface(t *testing.T){
 	})
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
-	
+
 	nitro.client = httpClient
 	getDefaultDatewayInterface(nitro, "0.0.0.0")
 }
-func TestNsInterfaceConfig(t *testing.T){
+func TestNsInterfaceConfig(t *testing.T) {
 	input, nitro, _ := getClientAndDeviceInfo()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "key", r.Header.Get("Key"))
@@ -195,7 +188,7 @@ func TestNsInterfaceConfig(t *testing.T){
 	})
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
-	
+
 	nitro.client = httpClient
 	node := new(Node)
 	node.PodAddress = "2.2.2.2"
@@ -206,31 +199,31 @@ func TestNsInterfaceConfig(t *testing.T){
 	NsInterfaceAddRoute(nitro, input, node)
 
 	configPack := ConfigPack{}
-        route := Route{
-                Network: node.PodAddress,
-                Netmask: node.PodNetMask,
-                Gateway: node.PodAddress,
-        }
-        configPack.Set("route", &route)
+	route := Route{
+		Network: node.PodAddress,
+		Netmask: node.PodNetMask,
+		Gateway: node.PodAddress,
+	}
+	configPack.Set("route", &route)
 
-        arp := Arp{
-                Ipaddress: node.PodAddress,
-                Mac:       node.PodVTEP,
-                Vxlan:     input.IngressDeviceVxlanIDs,
-                Vtep:      node.IPAddr,
-        }
-        configPack.Set("arp", &arp)
+	arp := Arp{
+		Ipaddress: node.PodAddress,
+		Mac:       node.PodVTEP,
+		Vxlan:     input.IngressDeviceVxlanIDs,
+		Vtep:      node.IPAddr,
+	}
+	configPack.Set("arp", &arp)
 
 	AddIngressDeviceConfig(&configPack, nitro)
 	BindToNetProfile(input, nitro)
 	UnBindNetProfile(input, nitro)
 
 	configPack = ConfigPack{}
-        vxlanargs := map[string]string{"id": "1"}
-        configPack.Set("vxlan", vxlanargs)
+	vxlanargs := map[string]string{"id": "1"}
+	configPack.Set("vxlan", vxlanargs)
 
-        nsipargs := map[string]string{"ipaddress": "2.2.2.2"}
-        configPack.Set("nsip", nsipargs)
+	nsipargs := map[string]string{"ipaddress": "2.2.2.2"}
+	configPack.Set("nsip", nsipargs)
 
 	DeleteIngressDeviceConfig(&configPack, nitro)
 	NsInterfaceDeleteRoute(nitro, input, node)

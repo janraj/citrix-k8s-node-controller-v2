@@ -145,7 +145,7 @@ type Vxlan struct {
 type Vxlan_srcip_binding struct {
 	Id        int    `json:"id,omitempty"`
 	Ipaddress string `json:"ipaddress,omitempty"`
-	Srcip     string `json:"srcip",omitempty"`
+	Srcip     string `json:"srcip,omitempty"`
 	Netmask   string `json:"netmask,omitempty"`
 }
 type Route struct {

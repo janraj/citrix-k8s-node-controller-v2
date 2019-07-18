@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/fake"
 	"runtime"
 	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
-var fakeK8sApi *KubernetesAPIServer = nil
-var NsNitroObj *NitroClient = nil
-var InputObj   *ControllerInput = nil
+var fakeK8sApi *KubernetesAPIServer
+var NsNitroObj *NitroClient
+var InputObj *ControllerInput
+
 func getClientAndDeviceInfo() (*ControllerInput, *NitroClient, *KubernetesAPIServer) {
-	if (NsNitroObj !=  nil && fakeK8sApi != nil && InputObj != nil){
+	if NsNitroObj != nil && fakeK8sApi != nil && InputObj != nil {
 		return InputObj, NsNitroObj, fakeK8sApi
 	}
 	fmt.Println("TEST Flannel: Setting up the K8s interface and Ns interface")
@@ -20,8 +21,8 @@ func getClientAndDeviceInfo() (*ControllerInput, *NitroClient, *KubernetesAPISer
 	NsNitroObj := createIngressDeviceClient(InputObj)
 	fake := fake.NewSimpleClientset()
 	fakeK8sApi = &KubernetesAPIServer{
-		 Suffix: "Test",
-		 Client: fake,
+		Suffix: "Test",
+		Client: fake,
 	}
 	return InputObj, NsNitroObj, fakeK8sApi
 }
@@ -55,9 +56,9 @@ func TestInitializeNode(t *testing.T) {
 func TestCreateDummyNode(t *testing.T) {
 	input, _, api := getClientAndDeviceInfo()
 	node := api.CreateDummyNode(input)
-	if (node != nil){
+	if node != nil {
 		node := api.CreateDummyNode(input)
-		if (node != nil) {
+		if node != nil {
 			t.Error("Expected node creation failed")
 		}
 	}
@@ -66,11 +67,11 @@ func TestInitFlannel(t *testing.T) {
 	input, nsObj, api := getClientAndDeviceInfo()
 	InitFlannel(api, nsObj, input)
 }
-func TestTerminateFlannel(t *testing.T){
+func TestTerminateFlannel(t *testing.T) {
 	input, nsObj, api := getClientAndDeviceInfo()
-        TerminateFlannel(api, nsObj, input) 
+	TerminateFlannel(api, nsObj, input)
 }
-func TestDeleteDummyNode(t *testing.T){
+func TestDeleteDummyNode(t *testing.T) {
 	assert := assert.New(t)
 	input, _, api := getClientAndDeviceInfo()
 	api.CreateDummyNode(input)

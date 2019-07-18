@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 func TestConvertPrefixLenToMask(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	fmt.Println("Current test filename: " + filename)
@@ -64,28 +63,28 @@ func TestConfigDecider(t *testing.T) {
 }
 func TestGenerateNextPodAddr(t *testing.T) {
 	nextIP := GenerateNextPodAddr("10.10.10.10")
-     	if (nextIP != "10.10.10.11"){
+	if nextIP != "10.10.10.11" {
 		t.Error("Expected 10.10.10.11, got ", nextIP)
 	}
 	nextIP = GenerateNextPodAddr("10.10.10.244")
-     	if (nextIP != "10.10.10.245"){
+	if nextIP != "10.10.10.245" {
 		t.Error("Expected 10.10.10.245, got ", nextIP)
 	}
 	nextIP = GenerateNextPodAddr("0.0.0.0")
-     	if (nextIP != "0.0.0.1"){
+	if nextIP != "0.0.0.1" {
 		t.Error("Expected 0.0.0.1, got ", nextIP)
 	}
 	nextIP = GenerateNextPodAddr("10.10.10.300")
-     	if (nextIP != "Error"){
+	if nextIP != "Error" {
 		t.Error("Expected Error, got ", nextIP)
 	}
 }
-func TestHandleConfigMapAddEvent(t *testing.T){
+func TestHandleConfigMapAddEvent(t *testing.T) {
 	input, obj, api := getClientAndDeviceInfo()
 	HandleConfigMapAddEvent(api, obj, obj, input)
 
 }
-func TestHandleConfigMapDeleteEvent(t *testing.T){
+func TestHandleConfigMapDeleteEvent(t *testing.T) {
 	input, obj, api := getClientAndDeviceInfo()
 	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
@@ -95,7 +94,7 @@ func TestHandleConfigMapDeleteEvent(t *testing.T){
 	input.State = NetscalerInit
 	HandleConfigMapDeleteEvent(api, configobj, obj, input)
 }
-func TestHandleConfigMapUpdateEvent(t *testing.T){
+func TestHandleConfigMapUpdateEvent(t *testing.T) {
 	input, obj, api := getClientAndDeviceInfo()
 	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
@@ -104,12 +103,12 @@ func TestHandleConfigMapUpdateEvent(t *testing.T){
 	configobj, _ := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	HandleConfigMapUpdateEvent(api, configobj, configobj, obj, input)
 }
-func TestParseNodeEvents(t *testing.T){
+func TestParseNodeEvents(t *testing.T) {
 	input, nitro, api := getClientAndDeviceInfo()
-        api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
-                ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
-                Data:       map[string]string{"Operation": "ADD"},
-        })
+	api.Client.CoreV1().ConfigMaps("citrix").Create(&v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "citrix-node-controller"},
+		Data:       map[string]string{"Operation": "ADD"},
+	})
 	node := api.CreateDummyNode(input)
 	ParseNodeEvents(api, node, nitro, input)
 	node.Spec.PodCIDR = ""
