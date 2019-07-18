@@ -1,106 +1,106 @@
 package main
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 	"os"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 	"strings"
 )
+
 var (
-	NetscalerInit=0x00000008
-	NetscalerTerminate=0x00000010
+	NetscalerInit      = 0x00000008
+	NetscalerTerminate = 0x00000010
 )
 
-
 type Node struct {
-	HostName   string `json:"hostname,omitempty"`
-	IPAddr     string `json:"address,omitempty"`
-	ExternalIPAddr     string `json:"externalip,omitempty"`
-	PodCIDR    string `json:"podcidr,omitempty"`
-	PodVTEP    string `json:"podvtep,omitempty"`
-	PodNetMask string `json:"podnetmask,omitempty"`
-	PodAddress string `json:"podaddress,omitempty"`
+	HostName       string `json:"hostname,omitempty"`
+	IPAddr         string `json:"address,omitempty"`
+	ExternalIPAddr string `json:"externalip,omitempty"`
+	PodCIDR        string `json:"podcidr,omitempty"`
+	PodVTEP        string `json:"podvtep,omitempty"`
+	PodNetMask     string `json:"podnetmask,omitempty"`
+	PodAddress     string `json:"podaddress,omitempty"`
 	NextPodAddress string `json:"nextpodaddress,omitempty"`
-	PodMaskLen string `json:"prefix, omitempty"`
-	Type       string `json:"podvtep,omitempty"`
-	VxlanPort  string `json:"vxlanport, omitempty"`
-	Count      int    `json:"count,omitempty"`
-	Label     string `json:"label,omitempty"`
-	Role     string `json:"role,omitempty"`
+	PodMaskLen     string `json:"prefix, omitempty"`
+	Type           string `json:"podvtep,omitempty"`
+	VxlanPort      string `json:"vxlanport, omitempty"`
+	Count          int    `json:"count,omitempty"`
+	Label          string `json:"label,omitempty"`
+	Role           string `json:"role,omitempty"`
 }
 
 type ControllerInput struct {
-	State		      int 
-	IngressDeviceIP       string
-	IngressDeviceVtepMAC  string
-	IngressDeviceNetprof  string
-	IngressDeviceUsername string
-	IngressDevicePassword string
-	IngressDeviceVtepIP  string
-	IngressDevicePodCIDR  string
-	IngressDevicePodIP  string
-	IngressDevicePodSubnet  string
-	IngressDeviceVxlanID  int
+	State                  int
+	IngressDeviceIP        string
+	IngressDeviceVtepMAC   string
+	IngressDeviceNetprof   string
+	IngressDeviceUsername  string
+	IngressDevicePassword  string
+	IngressDeviceVtepIP    string
+	IngressDevicePodCIDR   string
+	IngressDevicePodIP     string
+	IngressDevicePodSubnet string
+	IngressDeviceVxlanID   int
 	IngressDeviceVxlanIDs  string
-	IngressDeviceVRID  int
-	IngressDeviceVRIDs  string
-	NodeSubnetMask	      string
-	NodeCIDR	      string
-	ClusterCNI            string
-	CncOperation 	      string
-	ClusterCNIPort        int
-	DummyNodeLabel        string
-	NodesInfo             map[string]*Node
+	IngressDeviceVRID      int
+	IngressDeviceVRIDs     string
+	NodeSubnetMask         string
+	NodeCIDR               string
+	ClusterCNI             string
+	CncOperation           string
+	ClusterCNIPort         int
+	DummyNodeLabel         string
+	NodesInfo              map[string]*Node
 }
 
-
 func IsValidIP4(ipAddress string) bool {
-        ipaddress := strings.Split(ipAddress, ".")
+	ipaddress := strings.Split(ipAddress, ".")
 	firstOctect, err := strconv.Atoi(ipaddress[0])
-	if (err != nil) {
+	if err != nil {
 		return false
 	}
-        if (firstOctect <0 || firstOctect >255) {
+	if firstOctect < 0 || firstOctect > 255 {
 		return false
 	}
 	secondOctect, err := strconv.Atoi(ipaddress[1])
-	if (err != nil) {
+	if err != nil {
 		return false
 	}
-        if (secondOctect<0 || secondOctect>255) {
+	if secondOctect < 0 || secondOctect > 255 {
 		return false
 	}
-	thirdOctect, err := strconv.Atoi(ipaddress[2]); 
-	if (err != nil) {
+	thirdOctect, err := strconv.Atoi(ipaddress[2])
+	if err != nil {
 		return false
 	}
-        if (thirdOctect<0 || thirdOctect>255) {
+	if thirdOctect < 0 || thirdOctect > 255 {
 		return false
 	}
-	fourthOctect, err := strconv.Atoi(ipaddress[3]); 
+	fourthOctect, err := strconv.Atoi(ipaddress[3])
 
-	if (err != nil) {
+	if err != nil {
 		return false
 	}
-        if (fourthOctect<0 || fourthOctect>255) {
+	if fourthOctect < 0 || fourthOctect > 255 {
 		return false
 	}
 	return true
 }
+
 /*
 func FetchOptionalInputs(InputDataBuff *ControllerInput) *ControllerInput {
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
 	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
 		klog.Info("[INFO] Ingress Device VTEP IP (NS_VTEP_IP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
-		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP 
+		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP
 	}
 	if (!(IsValidIP4(InputDataBuff.IngressDeviceVtepIP))) {
 		klog.Error("[ERROR] Invalid IP ")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
-        subnet := strings.Split(splitString[0], ".") 
+        subnet := strings.Split(splitString[0], ".")
         InputDataBuff.IngressDevicePodIP = subnet[0] + "." + subnet[1] + "." +subnet[2]+".1"
         InputDataBuff.IngressDevicePodSubnet = subnet[0] + "." + subnet[1] + "." +subnet[2]+".0/"+splitString[1]
 	InputDataBuff.DummyNodeLabel = "citrixadc"
@@ -181,7 +181,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Error("[ERROR] Ingress Device IP (NS_IP) is required, SNIP with Management access enabled")
 		configError = 1
 	}
-	if (!(IsValidIP4(InputDataBuff.IngressDeviceIP))) {
+	if !(IsValidIP4(InputDataBuff.IngressDeviceIP)) {
 		klog.Error("[ERROR] Invalid IP ")
 		configError = 1
 	}
@@ -225,25 +225,25 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
 	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
 		klog.Info("[INFO] Ingress Device VTEP IP (NS_VTEP_IP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
-		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP 
+		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP
 	}
-	if (!(IsValidIP4(InputDataBuff.IngressDeviceVtepIP))) {
+	if !(IsValidIP4(InputDataBuff.IngressDeviceVtepIP)) {
 		klog.Error("[ERROR] Invalid IP ")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
-        subnet := strings.Split(splitString[0], ".") 
-        InputDataBuff.IngressDevicePodIP = subnet[0] + "." + subnet[1] + "." +subnet[2]+".1"
-        InputDataBuff.IngressDevicePodSubnet = subnet[0] + "." + subnet[1] + "." +subnet[2]+".0/"+splitString[1]
+	subnet := strings.Split(splitString[0], ".")
+	InputDataBuff.IngressDevicePodIP = subnet[0] + "." + subnet[1] + "." + subnet[2] + ".1"
+	InputDataBuff.IngressDevicePodSubnet = subnet[0] + "." + subnet[1] + "." + subnet[2] + ".0/" + splitString[1]
 	InputDataBuff.DummyNodeLabel = "citrixadc"
-        InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
+	InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
 	if InputDataBuff.IngressDeviceVxlanID == 0 {
 		klog.Info("[INFO] VXLAN ID has Not Given, taking 1 as default VXLAN_ID (flannel uses 1 as default)")
 		InputDataBuff.IngressDeviceVxlanID = 1
 		InputDataBuff.IngressDeviceVxlanIDs = "1"
 	}
-        InputDataBuff.IngressDeviceVRIDs = os.Getenv("NS_VRID")
+	InputDataBuff.IngressDeviceVRIDs = os.Getenv("NS_VRID")
 	InputDataBuff.IngressDeviceVRID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVRIDs)
 	if InputDataBuff.IngressDeviceVRID == 0 {
 		klog.Info("[INFO] VRID has Not Given, taking 99 as default VRID")
@@ -262,6 +262,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	InputDataBuff.NodesInfo = make(map[string]*Node)
 	return &InputDataBuff
 }
+
 /*
 *************************************************************************************************
 *   APIName :  WaitForConfigMapInput                                                            *
@@ -270,19 +271,20 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 *   Descr   :  This API waits till Citrix Node Config map input is supplied.                    *
 *************************************************************************************************
  */
-func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *ControllerInput){
+func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *ControllerInput) {
 	klog.Info("[INFO] Waiting for the Config Map input...")
-	for{	 
+	for {
 		configmap, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
-		if (err == nil) {
+		if err == nil {
 			ConfigMapData := make(map[string]string)
 			ConfigMapData = configmap.Data
 			klog.Info("[INFO] Config Map Data", ConfigMapData)
 			ControllerInputObj.CncOperation = ConfigMapData["operation"]
-			break;
+			break
 		}
 	}
 }
+
 /*
 *************************************************************************************************
 *   APIName :  MonitorIngressDevice                                                             *
@@ -295,7 +297,7 @@ func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *Control
  */
 func MonitorIngressDevice(IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	vtepMac := getClusterInterfaceMac(IngressDeviceClient)
-	if (vtepMac != "error" && vtepMac != "00:00:00:00:00:00"){
+	if vtepMac != "error" && vtepMac != "00:00:00:00:00:00" {
 		ControllerInputObj.IngressDeviceVtepMAC = vtepMac
 	} else {
 		ControllerInputObj.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")

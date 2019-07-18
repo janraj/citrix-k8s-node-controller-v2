@@ -5,7 +5,7 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
-        "time"
+	"time"
 )
 
 /*
@@ -24,23 +24,23 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 			Name: "citrixadc",
 		},
 		Spec: v1.NodeSpec{
-                       PodCIDR: obj.IngressDevicePodCIDR,
-		       Unschedulable: true,
-		       Taints: []v1.Taint{
+			PodCIDR:       obj.IngressDevicePodCIDR,
+			Unschedulable: true,
+			Taints: []v1.Taint{
 				{Key: "key1", Value: "value1", Effect: "NoSchedule"},
 				{Key: "key2", Value: "value2", Effect: "NoExecute"},
-		       }, 
-                },
-                Status: v1.NodeStatus{
+			},
+		},
+		Status: v1.NodeStatus{
 			Conditions: []v1.NodeCondition{
 				{
-					Type:               v1.NodeReady,
-					Status:             v1.ConditionTrue,
-					Reason:             "KubeletReady",
-					Message:            "kubelet is posting ready status",
+					Type:    v1.NodeReady,
+					Status:  v1.ConditionTrue,
+					Reason:  "KubeletReady",
+					Message: "kubelet is posting ready status",
 				},
 			},
-		},	
+		},
 	}
 	//NewNode.Sepc.PodCIDR = obj.IngressDevicePodCIDR
 	NewNode.Labels = make(map[string]string)
@@ -56,7 +56,7 @@ func InitializeNode(obj *ControllerInput) *v1.Node {
 
 // DeleteDummyNode deletes the citrix adc node from kubernetes cluster.
 // It takes Node as input and return true if able to delete node else false.
-func (api KubernetesAPIServer) DeleteDummyNode(node *v1.Node) bool{
+func (api KubernetesAPIServer) DeleteDummyNode(node *v1.Node) bool {
 	klog.Info("[INFO] Deleting Citrix ADC Node")
 	err := api.Client.CoreV1().Nodes().Delete(node.GetObjectMeta().GetName(), metav1.NewDeleteOptions(0))
 	if err != nil {
@@ -83,7 +83,7 @@ func (api KubernetesAPIServer) CreateDummyNode(obj *ControllerInput) *v1.Node {
 		klog.Error("[ERROR] Node Creation has failed", err)
 		return node
 	}
-        time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
+	time.Sleep(10 * time.Second) //TODO, We have to wait till Node is available.
 	klog.Info("[INFO] Created Citrix ADC Node of name=", node.GetObjectMeta().GetName())
 	return node
 }
@@ -128,7 +128,7 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 		Srcip: controllerInput.IngressDeviceVtepIP,
 	}
 	configPack.Set("vxlan_srcip_binding", &vxlanbind)
-   
+
 	nsip := Nsip{
 		Ipaddress: controllerInput.IngressDevicePodIP,
 		Netmask:   controllerInput.NodeSubnetMask,
@@ -137,6 +137,7 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	AddIngressDeviceConfig(&configPack, ingressDevice)
 	BindToNetProfile(controllerInput, ingressDevice)
 }
+
 /*
 *************************************************************************************************
 *   APIName :  DeleteVxlanConfig	                                                        *
@@ -146,13 +147,13 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 *************************************************************************************************
  */
 func DeleteVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerInput, node *Node) {
-	
+
 	UnBindNetProfile(controllerInput, ingressDevice)
 
 	configPack := ConfigPack{}
 	vxlanargs := map[string]string{"id": controllerInput.IngressDeviceVxlanIDs}
 	configPack.Set("vxlan", vxlanargs)
-   
+
 	nsipargs := map[string]string{"ipaddress": controllerInput.IngressDevicePodIP}
 	configPack.Set("nsip", nsipargs)
 	DeleteIngressDeviceConfig(&configPack, ingressDevice)
@@ -168,7 +169,7 @@ func DeleteVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
  */
 func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	klog.Info("[INFO] Initializing Flannel Config")
-	dummyNode := api.GetDummyNode(controllerInput)
+	var dummyNode *v1.Node = api.GetDummyNode(controllerInput)
 	ingressDevice.GetVxlanConfig(controllerInput)
 	if dummyNode == nil {
 		api.CreateDummyNode(controllerInput)
@@ -178,8 +179,9 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
 	//node.PodNetMask = "255.255.0.0" //Automate to find next highest number
 	//CreateVxlanConfig(ingressDevice, controllerInput, node)
 	CreateVxlanConfig(ingressDevice, controllerInput)
-	controllerInput.State |= NetscalerInit 
+	controllerInput.State |= NetscalerInit
 }
+
 /*
 *************************************************************************************************
 *   APIName :  TerminateFlannel	                                                                *
@@ -193,11 +195,11 @@ func TerminateFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, cont
 	dummyNode := api.GetDummyNode(controllerInput)
 	if dummyNode == nil {
 		klog.Info("[ERROR] Expecting Dummy node to be Present Citrix ADC node \n")
-		return 
+		return
 	}
 	node := ParseNodeEvents(api, dummyNode, ingressDevice, controllerInput)
 	node.PodNetMask = controllerInput.NodeSubnetMask
 	DeleteVxlanConfig(ingressDevice, controllerInput, node)
 	api.DeleteDummyNode(dummyNode)
-	controllerInput.State |= NetscalerTerminate 
+	controllerInput.State |= NetscalerTerminate
 }
