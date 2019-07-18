@@ -14,7 +14,7 @@ var (
 	NetscalerTerminate = 0x00000010
 )
 
-// Node structure keeps teh parsed information of a Node Object
+// Node structure keeps the parsed information of a Node Object
 type Node struct {
 	HostName       string `json:"hostname,omitempty"`
 	IPAddr         string `json:"address,omitempty"`
@@ -25,7 +25,7 @@ type Node struct {
 	PodAddress     string `json:"podaddress,omitempty"`
 	NextPodAddress string `json:"nextpodaddress,omitempty"`
 	PodMaskLen     string `json:"prefix,omitempty"`
-	Type           string `json:"podvtep,omitempty"`
+	Type           string `json:"type,omitempty"`
 	VxlanPort      string `json:"vxlanport,omitempty"`
 	Count          int    `json:"count,omitempty"`
 	Label          string `json:"label,omitempty"`
@@ -269,7 +269,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	return &InputDataBuff
 }
 
-// This waits for teh config map input. This function keep CNC for getting COnfig map input.
+// This waits for the config map input. This function keep CNC for getting COnfig map input.
 func WaitForConfigMapInput(api *KubernetesAPIServer, ControllerInputObj *ControllerInput) {
 	klog.Info("[INFO] Waiting for the Config Map input...")
 	for {

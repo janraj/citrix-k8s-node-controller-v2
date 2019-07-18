@@ -58,7 +58,7 @@ func ConvertPrefixLenToMask(prefixLen string) string {
 	return netmaskdot
 }
 
-// This creates go client. 
+// This creates go client.
 func CreateK8sApiserverClient() (*KubernetesAPIServer, error) {
 	klog.Info("[INFO] Creating API Client")
 	api := &KubernetesAPIServer{}
@@ -262,6 +262,8 @@ func CoreHandler(api *KubernetesAPIServer, obj interface{}, newobj interface{}, 
 	}
 }
 */
+
+// GetClusterCNI get the CNI used in kubernetes cluster.
 func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 	pods, err := api.Client.Core().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
@@ -279,6 +281,8 @@ func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 		}
 	}
 }
+
+//ConfigDecider function choose the overlay mechanish for establish route between cluster and Netscaler ADC.
 func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	if controllerInput.ClusterCNI == "" {
 		GetClusterCNI(api, controllerInput)
@@ -290,16 +294,7 @@ func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, control
 	}
 }
 
-/*
-*************************************************************************************************
-*   APIName :  ConfigMapInputWatcher                                                            *
-*   Input   :  Takes API server session called client.             			        *
-*   Output  :  Invokes call back functions.	                                                *
-*   Descr   :  This API is for watching the Nodes. API Monitors Kubernetes API server for Nodes *
-*            events and store in node cache. Based on the events type, call back functions      *
-*	     Will execute and perform the desired tasks.					*
-*************************************************************************************************
- */
+//ConfigMapInputWatcher creates a watch goroutine for configmaps
 func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 
 	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", "citrix", fields.Everything())
@@ -322,8 +317,8 @@ func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroC
 	defer close(stop)
 	go configcontroller.Run(stop)
 	select {}
-	return
 }
+
 func CheckAndWaitForNetscalerInit(ControllerInputObj *ControllerInput) {
 	if (ControllerInputObj.State & NetscalerInit) != NetscalerInit {
 		klog.Info("[DEBUG] Waiting for NetScaler initialization to complete")
@@ -647,7 +642,7 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	//}
 	configMaps, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
 	if err != nil {
-		fmt.Errorf("ConfigMap Get API error: %+v \n pod: %+v", configMaps, err)
+		fmt.Errorf("ConfigMap Get API error")
 	}
 	if configMaps != nil {
 		ConfigMapData := make(map[string]string)
