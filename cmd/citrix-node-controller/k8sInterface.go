@@ -264,6 +264,7 @@ func CoreHandler(api *KubernetesAPIServer, obj interface{}, newobj interface{}, 
 */
 
 // GetClusterCNI get the CNI used in kubernetes cluster.
+// This function grep for CNI name in Kube system POD as there is no straight forward API to get CNI info.
 func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 	pods, err := api.Client.Core().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
@@ -276,39 +277,44 @@ func GetClusterCNI(api *KubernetesAPIServer, controllerInput *ControllerInput) {
 			controllerInput.ClusterCNI = "Weave"
 		} else if strings.Contains(pod.Name, "calico") {
 			controllerInput.ClusterCNI = "Calico"
+		} else if strings.Contains(pod.Name, "canal") {
+			controllerInput.ClusterCNI = "Canal"
 		} else {
 			controllerInput.ClusterCNI = "Flannel"
 		}
 	}
 }
 
-//ConfigDecider function choose the overlay mechanish for establish route between cluster and Netscaler ADC.
+//ConfigDecider function choose the overlay mechanism for establish route between cluster and Netscaler ADC.
+// Flannel and Canal it uses VXLAN. 
 func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	if controllerInput.ClusterCNI == "" {
 		GetClusterCNI(api, controllerInput)
 	}
-	if controllerInput.ClusterCNI == "Flannel" {
+	if controllerInput.ClusterCNI == "Flannel" || controllerInput.ClusterCNI == "Canal"{
+		klog.Info("[INFO] CNI Detected on the cluster is", controllerInput.ClusterCNI)
 		InitFlannel(api, ingressDevice, controllerInput)
 	} else {
 		klog.Info("[INFO] Network Automation is not supported for other than Flannel")
 	}
 }
 
-//ConfigMapInputWatcher creates a watch goroutine for configmaps
+// ConfigMapInputWatcher creates a watch goroutine for configmaps ADD, DELETE and UPDATE events.
+// Function takes api server, ingress client and user input as arguments.
 func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 
-	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", "citrix", fields.Everything())
+	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", ControllerInputObj.Namespace, fields.Everything())
 	_, configcontroller := cache.NewInformer(ConfigMapWatcher, &v1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			klog.Info("[INFO] CONFIG MAP ADD EVENT")
 			HandleConfigMapAddEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 		UpdateFunc: func(obj interface{}, newobj interface{}) {
-			klog.Info("[INFO] UPDATE")
+			klog.Info("[INFO] CONFIG MAP UPDATE EVENT")
 			HandleConfigMapUpdateEvent(api, obj, newobj, IngressDeviceClient, ControllerInputObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			klog.Info("[INFO] Config Map is deleted, CNC clean UP the whole configurations which it has created", obj)
+			klog.Info("[INFO] CONFIG MAP DELETE EVENT, CNC clean UP the whole configurations which it has created", obj)
 			HandleConfigMapDeleteEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 	},
@@ -376,6 +382,7 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 }
 
 func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
+	ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
 	ControllerInputObj.CncOperation = "ADD"
 	command := []string{"/bin/bash", "-c"}
 	args := []string{
@@ -389,7 +396,7 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 	DaemonSet := &appv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "citrixrouteaddpod",
-			Namespace: "citrix",
+			Namespace: ControllerInputObj.Namespace,
 			Labels: map[string]string{
 				"app": "citrixrouteaddpod",
 			},
@@ -430,18 +437,18 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 			},
 		},
 	}
-	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	_, err := api.Client.AppsV1().DaemonSets(ControllerInputObj.Namespace).Create(DaemonSet)
 	if err != nil {
 		klog.Error("[ERROR] Failed to create daemon set:", err)
 	}
-	CLeanupHandler(api, "citrixroutecleanuppod")
+	CLeanupHandler(api, "citrixroutecleanuppod", ControllerInputObj.Namespace)
 }
-func CLeanupHandler(api *KubernetesAPIServer, DaemonSet string) {
-	ds, err := api.Client.AppsV1().DaemonSets("citrix").Get(DaemonSet, metav1.GetOptions{})
+func CLeanupHandler(api *KubernetesAPIServer, DaemonSet string, namespace string) {
+	ds, err := api.Client.AppsV1().DaemonSets(namespace).Get(DaemonSet, metav1.GetOptions{})
 	if ds != nil {
 		falseVar := false
 		deleteOptions := &metav1.DeleteOptions{OrphanDependents: &falseVar}
-		err = api.Client.AppsV1().DaemonSets("citrix").Delete(ds.Name, deleteOptions)
+		err = api.Client.AppsV1().DaemonSets(namespace).Delete(ds.Name, deleteOptions)
 	}
 	if err != nil {
 		fmt.Print(err)
@@ -463,7 +470,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 	DaemonSet := &appv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "citrixroutecleanuppod",
-			Namespace: "citrix",
+			Namespace: ControllerInputObj.Namespace,
 			Labels: map[string]string{
 				"app": "citrixroutecleanuppod",
 			},
@@ -504,7 +511,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 			},
 		},
 	}
-	_, err := api.Client.AppsV1().DaemonSets("citrix").Create(DaemonSet)
+	_, err := api.Client.AppsV1().DaemonSets(ControllerInputObj.Namespace).Create(DaemonSet)
 	if err != nil {
 		klog.Error("[ERROR] Failed to create daemon set:", err)
 	}
@@ -512,14 +519,14 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 	ClearAllRoutes(api, obj, IngressDeviceClient, ControllerInputObj)
 
 	TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
-	CLeanupHandler(api, "citrixrouteaddpod")
+	CLeanupHandler(api, "citrixrouteaddpod", ControllerInputObj.Namespace)
 }
 
 func ClearAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	node := new(Node)
 	ConfigMapData := make(map[string]string)
 	ConfigMapData = obj.(*v1.ConfigMap).Data
-	klog.Info("JANRAJ CONFIG MAP DATA", ConfigMapData)
+	klog.Info("CONFIG MAP DATA", ConfigMapData)
 	for key, value := range ConfigMapData {
 		if strings.Contains(value, ".") {
 			klog.Info("[INFO] Key Value", key, value)
@@ -631,16 +638,16 @@ func GenerateNodeNetworkInfo(api *KubernetesAPIServer, obj interface{}, IngressD
 	nodeSelector["NodeIP"] = node.IPAddr
 	pod.Spec.NodeSelector = nodeSelector
 	//time.Sleep(10 * time.Second) //TODO, We have to wait till Pod is available.
-	//if _, err = api.Client.CoreV1().Pods("citrix").Create(pod); err != nil {
+	//if _, err = api.Client.CoreV1().Pods(ControllerInputObj.Namespace).Create(pod); err != nil {
 	//    	klog.Error("Failed to Create a Pod " + err.Error())
 	//}
 	time.Sleep(60 * time.Second) //TODO, We have to wait till Node is available.
 
-	//pod, err = api.Client.CoreV1().Pods("citrix").Get(pod.Name, metav1.GetOptions{})
+	//pod, err = api.Client.CoreV1().Pods(ControllerInputObj.Namespace).Get(pod.Name, metav1.GetOptions{})
 	//if err != nil {
 	//	fmt.Errorf("pod Get API error: %v \n pod: %v", err, pod)
 	//}
-	configMaps, err := api.Client.CoreV1().ConfigMaps("citrix").Get("citrix-node-controller", metav1.GetOptions{})
+	configMaps, err := api.Client.CoreV1().ConfigMaps(ControllerInputObj.Namespace).Get("citrix-node-controller", metav1.GetOptions{})
 	if err != nil {
 		fmt.Errorf("ConfigMap Get API error")
 	}

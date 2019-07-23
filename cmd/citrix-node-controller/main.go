@@ -21,7 +21,6 @@ func StartCitrixNodeController() {
 		klog.Fatal("[ERROR] K8s Client Error", err)
 	}
 	WaitForConfigMapInput(api, controllerInput)
-	ConfigDecider(api, ingressDevice, controllerInput)
 	ConfigMapInputWatcher(api, ingressDevice, controllerInput)
 	//CitrixNodeWatcher(api, ingressDevice, controllerInput)
 	//StartRestServer()

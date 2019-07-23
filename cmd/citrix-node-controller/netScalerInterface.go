@@ -488,20 +488,19 @@ func getClusterInterfaceMac(IngressDeviceClient *NitroClient) string {
 func getPrimaryNodeIP(IngressDeviceClient *NitroClient) string {
 	var hanode map[string]interface{}
 	url := IngressDeviceClient.url + "hanode"
-	log.Println("[JANRAJ]", url)
-	log.Println("[JANRAJ CJ]", url)
+	log.Println("[REST URL]", url)
 
 	result, err := IngressDeviceClient.doHTTPRequest("GET", url, bytes.NewBuffer([]byte{}), readResponseHandler)
 	if err != nil {
 		log.Println("[DEBUG] go-nitro: error listing with args, trying filter")
 	}
 	if err = json.Unmarshal(result, &hanode); err != nil {
-		klog.Info("[JANRAJ ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, hanode)
+		klog.Info("[ERROR] go-nitro: FindResourceArray: Failed to unmarshal Netscaler Response!", err, hanode)
 		return "error"
 	}
 	rsrcs, ok := hanode["hanode"]
 	if !ok || rsrcs == nil {
-		log.Printf("[JANRAJ ERROR]")
+		log.Printf("[ERROR]")
 		return "error"
 	}
 	resources := hanode["hanode"].([]interface{})
@@ -510,10 +509,10 @@ func getPrimaryNodeIP(IngressDeviceClient *NitroClient) string {
 		ret[i] = v.(map[string]interface{})
 		state := ret[i]["state"].(string)
 		if state == "Primary" {
-			log.Println("[JANRAJ] PRIMARY", ret[i]["ipaddress"])
+			log.Println("[INFO] PRIMARY", ret[i]["ipaddress"])
 
 		} else if state == "Secondary" {
-			log.Println("[JANRAJ] SECONDARY", ret[i]["ipaddress"])
+			log.Println("[INFO] SECONDARY", ret[i]["ipaddress"])
 		}
 
 	}
