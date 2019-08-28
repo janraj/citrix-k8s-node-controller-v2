@@ -11,16 +11,16 @@ metadata:
   name: citrix-node-controller
 rules:
   - apiGroups: ["*"]
-    resources: ["daemonsets", "nodes", "configmaps", "pods"]
-    verbs: ["get", "list", "watch", "create", "patch", "delete"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: [""]
-    resources: ["daemonsets", "nodes", "configmaps", "pods"]
-    verbs: ["get", "list", "watch", "create", "patch", "delete"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: ["extensions"]
     resources: ["daemonsets", "ingresses/status"]
-    verbs: ["get", "list", "watch", "create", "delete"]
+    verbs: ["get", "list", "watch", "create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -83,11 +83,13 @@ spec:
           value: "xxxxx"
         - name: NS_PASSWORD
           value: "xxxxx"
-        - name: NS_POD_CIDR
-          value: "xxx.xxx.xxx.xxx/xx"
-        - name: NODE_CNI_CIDR
-          value: "xxx.xxx.xxx.xxx/xx"
-        - name: NS_VTEP_MAC
-          value: "xx:xx:xx:xx:xx:xx"
-        - name: NS_NETPROFILE
-          value: "xxxxx"
+        - name: ADDRESS
+          value: "192.168.1.0/24"
+        - name: REMOTE_VTEPIP
+          value: "10.102.33.209"
+        - name: CNI_NAME
+          value: "flannel"
+        - name: VXLAN_PORT
+          value: "8472"
+        - name: VNID
+          value: "200"

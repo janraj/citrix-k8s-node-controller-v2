@@ -238,7 +238,7 @@ func DeleteIngressDeviceConfig(config *ConfigPack, client *NitroClient) {
 func NsInterfaceAddRoute(client *NitroClient, input *ControllerInput, node *Node) {
 	configPack := ConfigPack{}
 	route := Route{
-		Network: node.PodAddress,
+		Network: node.PodNetwork,
 		Netmask: node.PodNetMask,
 		Gateway: node.PodAddress,
 	}

@@ -22,6 +22,7 @@ type Node struct {
 	PodCIDR        string `json:"podcidr,omitempty"`
 	PodVTEP        string `json:"podvtep,omitempty"`
 	PodNetMask     string `json:"podnetmask,omitempty"`
+	PodNetwork     string `json:"podnetwork,omitempty"`
 	PodAddress     string `json:"podaddress,omitempty"`
 	NextPodAddress string `json:"nextpodaddress,omitempty"`
 	PodMaskLen     string `json:"prefix,omitempty"`
@@ -30,6 +31,35 @@ type Node struct {
 	Count          int    `json:"count,omitempty"`
 	Label          string `json:"label,omitempty"`
 	Role           string `json:"role,omitempty"`
+}
+
+var PrefixMaskTable = make(map[string]string)
+func InitPrefixMaskTable(){
+        PrefixMaskTable["8"] = "255.0.0.0"
+        PrefixMaskTable["9"] = "255.128.0.0"
+        PrefixMaskTable["10"] = "255.192.0.0"
+        PrefixMaskTable["11"] = "255.224.0.0"
+        PrefixMaskTable["12"] = "255.240.0.0"
+        PrefixMaskTable["13"] = "255.248.0.0"
+        PrefixMaskTable["14"] = "255.252.0.0"
+        PrefixMaskTable["15"] = "255.254.0.0"
+        PrefixMaskTable["16"] = "255.255.0.0"
+        PrefixMaskTable["17"] = "255.255.128.0"
+        PrefixMaskTable["18"] = "255.255.192.0"
+        PrefixMaskTable["19"] = "255.255.224.0"
+        PrefixMaskTable["20"] = "255.255.240.0"
+        PrefixMaskTable["21"] = "255.255.248.0"
+        PrefixMaskTable["22"] = "255.255.252.0"
+        PrefixMaskTable["23"] = "255.255.254.0"
+        PrefixMaskTable["24"] = "255.255.255.0"
+        PrefixMaskTable["25"] = "255.255.255.128"
+        PrefixMaskTable["26"] = "255.255.255.192"
+        PrefixMaskTable["27"] = "255.255.255.224"
+        PrefixMaskTable["28"] = "255.255.255.240"
+        PrefixMaskTable["29"] = "255.255.255.248"
+        PrefixMaskTable["30"] = "255.255.255.252"
+        PrefixMaskTable["31"] = "255.255.255.254"
+        PrefixMaskTable["32"] = "255.255.255.255"
 }
 
 // ControllerInput is the inputs passed to Citrix Node Controller
@@ -43,7 +73,6 @@ type ControllerInput struct {
 	IngressDeviceVtepIP    string
 	IngressDevicePodCIDR   string
 	IngressDevicePodIP     string
-	IngressDevicePodSubnet string
 	IngressDeviceVxlanID   int
 	IngressDeviceVxlanIDs  string
 	IngressDeviceVRID      int
@@ -117,75 +146,33 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Error("[ERROR] Ingress Device password (NS_PASSWORD) is  required")
 		configError = 1
 	}
-	InputDataBuff.IngressDeviceVtepMAC = os.Getenv("NS_VTEP_MAC")
-	if len(InputDataBuff.IngressDeviceVtepMAC) == 0 {
-		klog.Error("[ERROR] Ingress Device VtepMAC (NS_VTEP_MAC) is  required. Please configure VMAC on the Interface towards kubernetes cluster and provide that VMAC as NS_VTEP_MAC (https://docs.citrix.com/en-us/netscaler/12/system/high-availability-introduction/configuring-virtual-mac-addresses-high-availability.html).")
-		configError = 1
-	}
-	InputDataBuff.IngressDeviceNetprof = os.Getenv("NS_NETPROFILE")
-	if len(InputDataBuff.IngressDeviceNetprof) == 0 {
-		klog.Error("[ERROR] Provide Netprofile (NS_NETPROFILE) name used in Citrix Ingress Controller")
-		configError = 1
-	}
-	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NS_POD_CIDR")
+	InputDataBuff.IngressDevicePodCIDR = os.Getenv("ADDRESS")
 	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
-		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (NS_POD_CIDR)")
+		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (ADDRESS)")
 		configError = 1
 	}
-	InputDataBuff.NodeCIDR = os.Getenv("NODE_CNI_CIDR")
-	if len(InputDataBuff.NodeCIDR) == 0 {
-		klog.Infof("[ERROR] Provide Node subnet CIDR (NODE_CNI_CIDR: 10.241.0.0/16)")
+	InputDataBuff.IngressDeviceVtepIP = os.Getenv("REMOTE_VTEPIP")
+	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
+		klog.Info("[INFO] Ingress Device VTEP IP (REMOTE_VTEPIP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
+		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP
 		configError = 1
 	}
-	nodecidr := strings.Split(InputDataBuff.NodeCIDR, "/")
-	//InputDataBuff.NodeSubnet
-	InputDataBuff.NodeSubnetMask = ConvertPrefixLenToMask(nodecidr[1])
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
-	}
-	InputDataBuff.IngressDeviceVtepIP = os.Getenv("NS_VTEP_IP")
-	if len(InputDataBuff.IngressDeviceVtepIP) == 0 {
-		klog.Info("[INFO] Ingress Device VTEP IP (NS_VTEP_IP)  is empty, Hence taking NS_SNIP as VTEP IP = ", InputDataBuff.IngressDeviceIP)
-		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP
 	}
 	if !(IsValidIP4(InputDataBuff.IngressDeviceVtepIP)) {
 		klog.Error("[ERROR] Invalid IP ")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
 	}
 	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
-	subnet := strings.Split(splitString[0], ".")
-	InputDataBuff.IngressDevicePodIP = subnet[0] + "." + subnet[1] + "." + subnet[2] + ".1"
-	InputDataBuff.IngressDevicePodSubnet = subnet[0] + "." + subnet[1] + "." + subnet[2] + ".0/" + splitString[1]
-	InputDataBuff.DummyNodeLabel = "citrixadc"
-	InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("NS_VXLAN_ID")
+	InputDataBuff.NodeSubnetMask = PrefixMaskTable[splitString[1]]
+	InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("VNID")
 	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
 	if InputDataBuff.IngressDeviceVxlanID == 0 {
 		klog.Info("[INFO] VXLAN ID has Not Given, taking 1 as default VXLAN_ID (flannel uses 1 as default)")
 		InputDataBuff.IngressDeviceVxlanID = 1
 		InputDataBuff.IngressDeviceVxlanIDs = "1"
-	}
-	InputDataBuff.IngressDeviceVRIDs = os.Getenv("NS_VRID")
-	InputDataBuff.IngressDeviceVRID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVRIDs)
-	if InputDataBuff.IngressDeviceVRID == 0 {
-		klog.Info("[INFO] VRID has Not Given, taking 99 as default VRID")
-		InputDataBuff.IngressDeviceVRID = 99
-		InputDataBuff.IngressDeviceVRIDs = "99"
-	}
-	InputDataBuff.ClusterCNIPort, _ = strconv.Atoi(os.Getenv("K8S_VXLAN_PORT"))
-	if InputDataBuff.ClusterCNIPort == 0 {
-		klog.Info("[INFO] K8S_VXLAN_PORT has Not Given, taking default 8472 as Vxlan Port")
-		InputDataBuff.ClusterCNIPort = 8472
-	}
-	InputDataBuff.ClusterCNI = os.Getenv("K8S_CNI")
-	if len(InputDataBuff.ClusterCNI) == 0 {
-		klog.Infof("[INFO] Cluster CNI information is Empty")
-	}
-	InputDataBuff.NodesInfo = make(map[string]*Node)
-	InputDataBuff.Namespace = os.Getenv("K8S_NAMESPACE")
-	if len(InputDataBuff.Namespace) == 0 {
-		klog.Infof("[INFO] Namespace where Citrix Node controller has to be placed")
-		InputDataBuff.Namespace = "citrix"
 	}
 	return &InputDataBuff
 }
