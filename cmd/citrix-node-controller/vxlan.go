@@ -10,7 +10,7 @@ func CreateVxlanConfig(ingressDevice *NitroClient, controllerInput *ControllerIn
 	configPack := ConfigPack{}
 	vxlan := Vxlan{
 		Id:   controllerInput.IngressDeviceVxlanID,
-		Port: controllerInput.ClusterCNIPort,
+		Port: controllerInput.VxlanPort,
 	}
 	configPack.Set("vxlan", &vxlan)
 	vxlanbind := Vxlan_srcip_binding{
@@ -46,7 +46,7 @@ func InitFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controlle
 }
 
 func TerminateFlannel(api *KubernetesAPIServer, ingressDevice *NitroClient, controllerInput *ControllerInput) {
-	klog.Info("[INFO] Terminating Flannel Config")
+	klog.Info("[INFO] Terminating VXLAN Config")
 	DeleteVxlanConfig(ingressDevice, controllerInput)
 	controllerInput.State |= NetscalerTerminate
 }

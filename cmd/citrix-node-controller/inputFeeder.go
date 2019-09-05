@@ -4,6 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 	"os"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -82,6 +83,7 @@ type ControllerInput struct {
 	ClusterCNI             string
 	CncOperation           string
 	ClusterCNIPort         int
+	VxlanPort	       int
 	DummyNodeLabel         string
 	Namespace         string
 	NodesInfo              map[string]*Node
@@ -157,6 +159,18 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		InputDataBuff.IngressDeviceVtepIP = InputDataBuff.IngressDeviceIP
 		configError = 1
 	}
+	VxlanPort := os.Getenv("VXLAN_PORT")
+        if len(VxlanPort) == 0 {
+                fmt.Println("[ERROR] VxlanPort (VXLAN_PORT) is must for extending the route")
+                configError = 1
+        }
+	InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("VNID")
+	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
+	if InputDataBuff.IngressDeviceVxlanID == 0 {
+		klog.Info("[ERROR] vxlan id (VNID) has Not Given")
+                configError = 1
+	}
+	
 	if configError == 1 {
 		klog.Error("Unable to get the above mentioned input from YAML")
 		panic("[ERROR] Killing Container.........Please restart Citrix Node Controller with Valid Inputs")
@@ -167,13 +181,7 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 	}
 	splitString := strings.Split(InputDataBuff.IngressDevicePodCIDR, "/")
 	InputDataBuff.NodeSubnetMask = PrefixMaskTable[splitString[1]]
-	InputDataBuff.IngressDeviceVxlanIDs = os.Getenv("VNID")
-	InputDataBuff.IngressDeviceVxlanID, _ = strconv.Atoi(InputDataBuff.IngressDeviceVxlanIDs)
-	if InputDataBuff.IngressDeviceVxlanID == 0 {
-		klog.Info("[INFO] VXLAN ID has Not Given, taking 1 as default VXLAN_ID (flannel uses 1 as default)")
-		InputDataBuff.IngressDeviceVxlanID = 1
-		InputDataBuff.IngressDeviceVxlanIDs = "1"
-	}
+	InputDataBuff.VxlanPort, _ = strconv.Atoi(VxlanPort)
 	return &InputDataBuff
 }
 

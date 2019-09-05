@@ -90,18 +90,15 @@ func ConfigDecider(api *KubernetesAPIServer, ingressDevice *NitroClient, control
 // ConfigMapInputWatcher creates a watch goroutine for configmaps ADD, DELETE and UPDATE events.
 // Function takes api server, ingress client and user input as arguments.
 func ConfigMapInputWatcher(api *KubernetesAPIServer, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
-	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", "k8s-route-extender", fields.Everything())
+	ConfigMapWatcher := cache.NewListWatchFromClient(api.Client.Core().RESTClient(), "configmaps", v1.NamespaceAll, fields.Everything())
 	_, configcontroller := cache.NewInformer(ConfigMapWatcher, &v1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			klog.Info("[INFO] CONFIG MAP ADD EVENT")
 			HandleConfigMapAddEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 		UpdateFunc: func(obj interface{}, newobj interface{}) {
-			klog.Info("[INFO] CONFIG MAP UPDATE EVENT")
 			HandleConfigMapUpdateEvent(api, obj, newobj, IngressDeviceClient, ControllerInputObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			klog.Info("[INFO] CONFIG MAP DELETE EVENT, CNC clean UP the whole configurations which it has created", obj)
 			HandleConfigMapDeleteEvent(api, obj, IngressDeviceClient, ControllerInputObj)
 		},
 	},
@@ -125,25 +122,44 @@ func CheckAndWaitForNetscalerInit(ControllerInputObj *ControllerInput) {
 
 func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newobj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	node := new(Node)
-	klog.Info("[OLD OBJECT]", obj)
-	klog.Info("\n[NEW OBJECT]", newobj)
 	ConfigMapDataNew := make(map[string]string)
 	ConfigMapDataNew = newobj.(*v1.ConfigMap).Data
 	ConfigMapDataOld := make(map[string]string)
 	ConfigMapDataOld = obj.(*v1.ConfigMap).Data
-	for key, value := range ConfigMapDataNew {
-		if newval, ok := ConfigMapDataOld[key]; !ok {
-			if (strings.Contains(key, "Node")){
-				klog.Info("[INFO] Key Value", key, value, newval)
-				node.IPAddr = value
-				kv := strings.Split(key, "-")
-				node.PodAddress = ConfigMapDataNew["Interface-"+kv[1]]
-				node.PodVTEP = ConfigMapDataNew["Mac-"+kv[1]]
-				Network := strings.Split(ConfigMapDataNew["CNI-"+kv[1]], "/")
-				node.PodNetwork = Network[0]
-				node.PodMaskLen = Network[1]
-				node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
-				NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+	if _, ok := ConfigMapDataNew["EndpointIP"]; ok {
+		klog.Info("[INFO] CONFIG MAP UPDATE EVENT Old Object", obj, "New Object", newobj)
+		for key, value := range ConfigMapDataNew {
+			if _, ok := ConfigMapDataOld[key]; !ok {
+				if (strings.Contains(key, "Node")){
+					klog.Info("[INFO] Key Value", key, value)
+					node.IPAddr = value
+					kv := strings.Split(key, "-")
+					node.PodAddress = ConfigMapDataNew["Interface-"+kv[1]]
+					node.PodVTEP = ConfigMapDataNew["Mac-"+kv[1]]
+					cni := ConfigMapDataNew["CNI-"+kv[1]]
+					Network := strings.Split(cni, "/")
+					fmt.Println("[INFO] Interface Mac CNI", node.PodAddress, node.PodVTEP, cni)
+					node.PodNetwork = Network[0]
+					node.PodMaskLen = Network[1]
+					node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
+					NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+				}
+			}
+		}
+		for key, value := range ConfigMapDataOld {
+			if _, ok := ConfigMapDataNew[key]; !ok {
+				if (strings.Contains(key, "Node")){
+					klog.Info("[INFO] Key Value", key, value)
+					node.IPAddr = value
+					kv := strings.Split(key, "-")
+					node.PodAddress = ConfigMapDataOld["Interface-"+kv[1]]
+					node.PodVTEP = ConfigMapDataOld["Mac-"+kv[1]]
+					Network := strings.Split(ConfigMapDataOld["CNI-"+kv[1]], "/")
+					node.PodNetwork = Network[0]
+					node.PodMaskLen = Network[1]
+					node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
+					NsInterfaceDeleteRoute(IngressDeviceClient, ControllerInputObj, node)
+				}
 			}
 		}
 	}
@@ -152,23 +168,25 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	ControllerInputObj.CncOperation = "ADD"
 	node := new(Node)
-	klog.Info("[OBJECT]", obj)
 	ConfigMapData := make(map[string]string)
 	ConfigMapData = obj.(*v1.ConfigMap).Data
-	ControllerInputObj.IngressDevicePodIP = ConfigMapData["EndpointIP"]
-	ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
-	for key, value := range ConfigMapData {
-		if (strings.Contains(key, "Node")){
-			klog.Info("[INFO] Key Value", key, value)
-			node.IPAddr = value
-			kv := strings.Split(key, "-")
-			node.PodAddress = ConfigMapData["Interface-"+kv[1]]
-			node.PodVTEP = ConfigMapData["Mac-"+kv[1]]
-			Network := strings.Split(ConfigMapData["CNI-"+kv[1]], "/")
-			node.PodNetwork = Network[0]
-			node.PodMaskLen = Network[1]
-			node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
-			NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+	if _, ok := ConfigMapData["EndpointIP"]; ok {
+		klog.Info("[INFO] CONFIG MAP ADD EVENT Obect", obj)
+		ControllerInputObj.IngressDevicePodIP = ConfigMapData["EndpointIP"]
+		ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
+		for key, value := range ConfigMapData {
+			if (strings.Contains(key, "Node")){
+				klog.Info("[INFO] Key Value", key, value)
+				node.IPAddr = value
+				kv := strings.Split(key, "-")
+				node.PodAddress = ConfigMapData["Interface-"+kv[1]]
+				node.PodVTEP = ConfigMapData["Mac-"+kv[1]]
+				Network := strings.Split(ConfigMapData["CNI-"+kv[1]], "/")
+				node.PodNetwork = Network[0]
+				node.PodMaskLen = Network[1]
+				node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
+				NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+			}
 		}
 	}
 }
@@ -187,26 +205,26 @@ func CLeanupHandler(api *KubernetesAPIServer, DaemonSet string, namespace string
 
 func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	ControllerInputObj.CncOperation = "DELETE"
-	CheckAndWaitForNetscalerInit(ControllerInputObj)
-	ClearAllRoutes(api, obj, IngressDeviceClient, ControllerInputObj)
-
-	TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
-	CLeanupHandler(api, "citrixrouteaddpod", ControllerInputObj.Namespace)
-}
-
-func ClearAllRoutes(api *KubernetesAPIServer, obj interface{}, ingressDevice *NitroClient, controllerInput *ControllerInput) {
 	node := new(Node)
 	ConfigMapData := make(map[string]string)
 	ConfigMapData = obj.(*v1.ConfigMap).Data
-	klog.Info("CONFIG MAP DATA", ConfigMapData)
-	for key, value := range ConfigMapData {
-		if strings.Contains(value, ".") {
-			klog.Info("[INFO] Key Value", key, value)
-			node.PodAddress = value
-			node.PodVTEP = ConfigMapData[node.PodAddress]
-			node.PodNetMask = ConvertPrefixLenToMask("24")
-			node.PodMaskLen = "24"
-			NsInterfaceDeleteRoute(ingressDevice, controllerInput, node)
+	if _, ok := ConfigMapData["EndpointIP"]; ok {
+		klog.Info("[INFO] CONFIG MAP DELETE EVENT Obect", obj)
+		ControllerInputObj.IngressDevicePodIP = ConfigMapData["EndpointIP"]
+		for key, value := range ConfigMapData {
+			if (strings.Contains(key, "Node")){
+				klog.Info("[INFO] Key Value", key, value)
+				node.IPAddr = value
+				kv := strings.Split(key, "-")
+				node.PodAddress = ConfigMapData["Interface-"+kv[1]]
+				node.PodVTEP = ConfigMapData["Mac-"+kv[1]]
+				Network := strings.Split(ConfigMapData["CNI-"+kv[1]], "/")
+				node.PodNetwork = Network[0]
+				node.PodMaskLen = Network[1]
+				node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
+				NsInterfaceDeleteRoute(IngressDeviceClient, ControllerInputObj, node)
+			}
 		}
+		TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
 	}
 }

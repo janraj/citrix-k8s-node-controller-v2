@@ -255,7 +255,7 @@ func NsInterfaceAddRoute(client *NitroClient, input *ControllerInput, node *Node
 }
 
 func NsInterfaceDeleteRoute(client *NitroClient, obj *ControllerInput, nodeinfo *Node) {
-	var argsBundle = map[string]string{"network": nodeinfo.PodAddress, "netmask": nodeinfo.PodNetMask, "gateway": nodeinfo.PodAddress}
+	var argsBundle = map[string]string{"network": nodeinfo.PodNetwork, "netmask": nodeinfo.PodNetMask, "gateway": nodeinfo.PodAddress}
 	err2 := client.DeleteResourceWithArgsMap("route", "", argsBundle)
 	if err2 != nil {
 		fmt.Println(err2)
