@@ -44,17 +44,10 @@ The are the main components of the Citrix k8s node controller:
 	    This **K8s Interface** component interacts with the Kube API server through K8s Go client. It ensures the availability of the client and maintains a healthy client session.
        </details>
        <details>
-       <summary>**Node Watcher**</summary>
-	    The **Node Watcher** component monitors the node events through K8s interface. It responds to the node events such as node addition, deletion, or modification with its callback functions.
-       </details>
-       <details>
        <summary>**Input Feeder**</summary>
 	    The **Input Feeder** component provides inputs to the config decider. Some of the inputs are auto detected and the rest are taken from the Citrix k8s node controller deployment YAML file.
        </details>
        <details>
-       <summary>**Config Decider**</summary>
-	    The **Config Decider** component takes inputs from both the node watcher and the input feeder. Using the inputs it decides the best network automation required between the cluster and Citrix ADC.
-       </details>
        <details>
        <summary>**Core**</summary>
 	    The **Core** component interacts with the node watcher and updates the corresponding config engine. It is responsible for starting the best config engine for the corresponding cluster.
