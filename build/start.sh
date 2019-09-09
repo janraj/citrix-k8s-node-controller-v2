@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Start Kubernetes Route extender
-./go/bin/k8s-route-extender -D &
+./go/bin/kube-chorus-router -D &
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start Route Extender: $status"
@@ -18,7 +18,7 @@ fi
 
 
 while /bin/true; do
-  ps aux |grep k8s-route-extender |grep -q -v grep
+  ps aux |grep kube-chorus-router |grep -q -v grep
   PROCESS_1_STATUS=$?
   ps aux |grep citrix-node-controller |grep -q -v grep
   PROCESS_2_STATUS=$?
