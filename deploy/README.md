@@ -64,4 +64,4 @@ Perform the following:
 
 1.  Apply the [config map](https://github.com/janraj/citrix-k8s-node-controller/blob/master/deploy/config_map.yaml) using the following command:
 
-        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/config_map.yaml
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
