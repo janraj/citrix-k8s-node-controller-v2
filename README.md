@@ -12,9 +12,6 @@
 
 Citrix k8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device. 
 
->**Note:**
->Citrix k8s node controller currently works only with flannel as the Container Network Interface (CNI). The scope of Citrix node controller can be extended to other CNI.
-
 ## Contents
 
 -  [Overview](#overview)
