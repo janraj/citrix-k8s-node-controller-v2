@@ -11,11 +11,11 @@ metadata:
   name: citrix-node-controller
 rules:
   - apiGroups: ["*"]
-    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts", "clusterroles", "clusterrolebindings"]
     verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: [""]
-    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts"]
+    resources: ["daemonsets", "nodes", "configmaps", "pods", "namespaces", "serviceaccounts", "clusterroles", "clusterrolebindings"]
     verbs: ["get", "list", "watch", "create", "patch"]
 
   - apiGroups: ["extensions"]
