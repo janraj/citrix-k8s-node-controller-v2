@@ -83,8 +83,6 @@ spec:
           value: "192.168.1.0/24"
         - name: REMOTE_VTEPIP
           value: "10.102.33.209"
-        - name: CNI_NAME
-          value: "flannel"
         - name: VXLAN_PORT
           value: "8472"
         - name: VNID

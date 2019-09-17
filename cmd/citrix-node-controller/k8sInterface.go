@@ -158,7 +158,7 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 					node.PodNetwork = Network[0]
 					node.PodMaskLen = Network[1]
 					node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
-					NsInterfaceDeleteRoute(IngressDeviceClient, ControllerInputObj, node)
+					NsInterfaceDeleteRoute(IngressDeviceClient, node)
 				}
 			}
 		}
@@ -222,7 +222,7 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 				node.PodNetwork = Network[0]
 				node.PodMaskLen = Network[1]
 				node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
-				NsInterfaceDeleteRoute(IngressDeviceClient, ControllerInputObj, node)
+				NsInterfaceDeleteRoute(IngressDeviceClient, node)
 			}
 		}
 		TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)

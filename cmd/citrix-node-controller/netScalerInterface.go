@@ -251,10 +251,14 @@ func NsInterfaceAddRoute(client *NitroClient, input *ControllerInput, node *Node
 		Vtep:      node.IPAddr,
 	}
 	configPack.Set("arp", &arp)
+	node.PodAddress = ""
+	fmt.Println("Removing if same Network and Netmask present in NS")
+	NsInterfaceDeleteRoute(client, node)
+	node.PodAddress = route.Gateway
 	AddIngressDeviceConfig(&configPack, client)
 }
 
-func NsInterfaceDeleteRoute(client *NitroClient, obj *ControllerInput, nodeinfo *Node) {
+func NsInterfaceDeleteRoute(client *NitroClient, nodeinfo *Node) {
 	var argsBundle = map[string]string{"network": nodeinfo.PodNetwork, "netmask": nodeinfo.PodNetMask, "gateway": nodeinfo.PodAddress}
 	err2 := client.DeleteResourceWithArgsMap("route", "", argsBundle)
 	if err2 != nil {
@@ -267,6 +271,7 @@ func NsInterfaceDeleteRoute(client *NitroClient, obj *ControllerInput, nodeinfo 
 	}
 
 }
+
 func (ingressDevice *NitroClient) GetVxlanConfig(controllerInput *ControllerInput) {
 	klog.Info("GetVxlanConfig")
 }

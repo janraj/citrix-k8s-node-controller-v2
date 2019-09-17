@@ -226,6 +226,6 @@ func TestNsInterfaceConfig(t *testing.T) {
 	configPack.Set("nsip", nsipargs)
 
 	DeleteIngressDeviceConfig(&configPack, nitro)
-	NsInterfaceDeleteRoute(nitro, input, node)
+	NsInterfaceDeleteRoute(nitro, node)
 	nitro.deleteResourceWithArgsMap("vxlan", "vxlan", configPack.items[configPack.keys[0]].(map[string]string))
 }

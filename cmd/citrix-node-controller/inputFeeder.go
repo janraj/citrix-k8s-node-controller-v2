@@ -148,9 +148,9 @@ func FetchCitrixNodeControllerInput() *ControllerInput {
 		klog.Error("[ERROR] Ingress Device password (NS_PASSWORD) is  required")
 		configError = 1
 	}
-	InputDataBuff.IngressDevicePodCIDR = os.Getenv("ADDRESS")
+	InputDataBuff.IngressDevicePodCIDR = os.Getenv("NETWORK")
 	if len(InputDataBuff.IngressDevicePodCIDR) == 0 {
-		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (ADDRESS)")
+		klog.Infof("[ERROR] Provide Ingress device pod subnet CIDR (NETWORK)")
 		configError = 1
 	}
 	InputDataBuff.IngressDeviceVtepIP = os.Getenv("REMOTE_VTEPIP")
