@@ -10,17 +10,20 @@
 
 # Citrix k8s node controller
 
-Citrix k8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device. 
+Citrix k8s node controller is a micro service provided by Citrix that creates network between the Kubernetes cluster and ingress device.
 
 ## Contents
 
--  [Overview](#overview)
--  [Architecture](#architecture)
--  [How it works](#how-it-works)
--  [Get started](#get-started)
--  [Issues](#issues)
--  [Code of conduct](#code-of-conduct)
--  [License](#License)
+  + [Overview](#overview)
+  + [Architecture](#architecture)
+  + [How it works](#how-it-works)
+  + [Get started](#get-started)
+    + [Using Citrix k8s node controller as a process](#using-citrix-k8s-node-controller-as-a-process)
+    + [Using Citrix k8s node controller as a microservice](#using-citrix-k8s-node-controller-as-a-microservice)
+  + [Questions](#questions)
+  + [Issues](#issues)
+  + [Code of conduct](#code-of-conduct)
+  + [License](#license)
 
 ## Overview
 
@@ -62,13 +65,14 @@ Citrix k8s node controller monitors the node events and establishes a route betw
 
 ## Get started
 
-Citrix k8s node controller can be used in the following two ways:
+You can run Citrix k8s node controller as:
 
--  In cluster Citrix k8s node controller configuration. In this configuration, the Citrix k8s node controller is run as **microservice**.
--  Out of the cluster Citrix k8s node controller configuration. In this configuration, the Citrix k8s node controller is run as a **process**.
+-  A **microservice** inside the Kubernetes cluser.
+-  A **process** outside the Kubernetes cluster.
 
 >**Important:**
->Citrix recommends that you use **In cluster configuration** for production. And, use the **Out of cluster configuration** for easy development.
+>
+>Citrix recommends that you use Citrix k8s node controller as a **microservice** for production environments. And, as a **process** for easy development.
   
 ### Using Citrix k8s node controller as a process
 
