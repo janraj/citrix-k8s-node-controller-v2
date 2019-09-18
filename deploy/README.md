@@ -44,8 +44,10 @@ Perform the following:
 1.  Delete the [config map](config_map.yaml) using the following command:
 	
 	When we delete the configmap, citrix node controller clean up teh configuration created on Citrix ADC.
-        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
+
+        kubectl delete -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
+
 
 1.  Delete the citrix node controller  using the following command:
 
-        kubectl create -f citrix-k8s-node-controller.yaml
+        kubectl delete -f citrix-k8s-node-controller.yaml
