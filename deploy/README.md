@@ -1,34 +1,10 @@
 # Deploy the Citrix k8s node controller
-
-Citrix k8s node controller is controlled using a [config map](config_map.yaml). The [config map](config_map.yaml) file contains a `data.operation:` field that you can use to define Citrix k8s node controller to automatically create, apply, and delete routing configuration on Citrix ADC. You can use the following values for the `data.operation:` field:
-
-| **Value** | **Description** |
-| ----- | ----------- |
-| ADD | Citrix k8s node controller creates a routing configuration on the Citrix ADC instance. |
-| DELETE | Citrix k8s node controller deletes the routing configuration on the Citrix ADC instance. |
-
-[config_map.yaml](config_map.yaml):
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: citrix
-  labels:
-    name: citrix
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: citrix-node-controller
-  namespace: citrix
-data:
-  operation: "ADD"
-```
-
-## Deploy the Citrix k8s node controller
+  This creates Citrix Node Controller on Kubernetes and establish the route between Citrix ADC and kubernetes Nodes.
 
 Perform the following:
+1.  Create the configmap using the following command:
+
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
 
 1.  Download the `citrix-k8s-node-controller.yaml` deployment file using the following command:
 
@@ -62,6 +38,14 @@ Perform the following:
 
         kubectl create -f citrix-k8s-node-controller.yaml
 
-1.  Apply the [config map](config_map.yaml) using the following command:
+## Delete the Citrix K8s node conroller 
 
+
+1.  Delete the [config map](config_map.yaml) using the following command:
+	
+	When we delete the configmap, citrix node controller clean up teh configuration created on Citrix ADC.
         kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
+
+1.  Delete the citrix node controller  using the following command:
+
+        kubectl create -f citrix-k8s-node-controller.yaml
