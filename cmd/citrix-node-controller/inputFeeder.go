@@ -34,6 +34,7 @@ type Node struct {
 	Role           string `json:"role,omitempty"`
 }
 
+var NodeList[] *Node 
 var PrefixMaskTable = make(map[string]string)
 func InitPrefixMaskTable(){
         PrefixMaskTable["8"] = "255.0.0.0"

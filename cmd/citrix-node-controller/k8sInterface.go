@@ -143,6 +143,7 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 					node.PodMaskLen = Network[1]
 					node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
 					NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+					NodeList = append(NodeList, node)
 				}
 			}
 		}
@@ -167,8 +168,8 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 
 func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	ControllerInputObj.CncOperation = "ADD"
-	node := new(Node)
 	ConfigMapData := make(map[string]string)
+	MetaData := obj.(*v1.ConfigMap).ObjectMeta
 	ConfigMapData = obj.(*v1.ConfigMap).Data
 	if _, ok := ConfigMapData["EndpointIP"]; ok {
 		klog.Info("[INFO] CONFIG MAP ADD EVENT Obect", obj)
@@ -176,6 +177,7 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 		ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
 		for key, value := range ConfigMapData {
 			if (strings.Contains(key, "Node")){
+				node := new(Node)
 				klog.Info("[INFO] Key Value", key, value)
 				node.IPAddr = value
 				kv := strings.Split(key, "-")
@@ -186,8 +188,14 @@ func HandleConfigMapAddEvent(api *KubernetesAPIServer, obj interface{}, IngressD
 				node.PodMaskLen = Network[1]
 				node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
 				NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
+				NodeList = append(NodeList, node)
 			}
 		}
+	}else if MetaData.Name == "citrix-node-controller"{
+		ConfigDecider(api, IngressDeviceClient, ControllerInputObj)
+		for id, _ := range NodeList {
+			NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, NodeList[id])
+        	}
 	}
 }
 
@@ -206,6 +214,7 @@ func CLeanupHandler(api *KubernetesAPIServer, DaemonSet string, namespace string
 func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, IngressDeviceClient *NitroClient, ControllerInputObj *ControllerInput) {
 	ControllerInputObj.CncOperation = "DELETE"
 	node := new(Node)
+	MetaData := obj.(*v1.ConfigMap).ObjectMeta
 	ConfigMapData := make(map[string]string)
 	ConfigMapData = obj.(*v1.ConfigMap).Data
 	if _, ok := ConfigMapData["EndpointIP"]; ok {
@@ -225,6 +234,11 @@ func HandleConfigMapDeleteEvent(api *KubernetesAPIServer, obj interface{}, Ingre
 				NsInterfaceDeleteRoute(IngressDeviceClient, node)
 			}
 		}
+		TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
+	}else if MetaData.Name == "citrix-node-controller"{
+		for id, _ := range NodeList {
+			NsInterfaceDeleteRoute(IngressDeviceClient, NodeList[id])
+        	}
 		TerminateFlannel(api, IngressDeviceClient, ControllerInputObj)
 	}
 }
