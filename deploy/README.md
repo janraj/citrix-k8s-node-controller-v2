@@ -2,9 +2,6 @@
   This creates Citrix Node Controller on Kubernetes and establish the route between Citrix ADC and kubernetes Nodes.
 
 Perform the following:
-1.  Create the configmap using the following command:
-
-        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
 
 1.  Download the `citrix-k8s-node-controller.yaml` deployment file using the following command:
 
@@ -37,6 +34,10 @@ Perform the following:
 1.  After you have updated the Citrix k8s node controller deployment YAML file, deploy it using the following command:
 
         kubectl create -f citrix-k8s-node-controller.yaml
+
+1.  Create the configmap using the following command:
+
+        kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
 
 ## Delete the Citrix K8s node conroller 
 
