@@ -4,5 +4,3 @@ apiVersion: v1
 metadata:
   name: citrix-node-controller
   namespace: citrix
-data:
-  operation: "ADD"

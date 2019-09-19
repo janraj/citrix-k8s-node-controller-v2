@@ -79,7 +79,7 @@ spec:
           value: "xxxxx"
         - name: NS_PASSWORD
           value: "xxxxx"
-        - name: ADDRESS
+        - name: NETWORK
           value: "192.168.1.0/24"
         - name: REMOTE_VTEPIP
           value: "10.102.33.209"
