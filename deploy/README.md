@@ -5,7 +5,7 @@ Perform the following:
 
 1.  Download the `citrix-k8s-node-controller.yaml` deployment file using the following command:
 
-        wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller/master/deploy/citrix-k8s-node-controller.yaml
+        wget  https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/citrix-k8s-node-controller.yaml
 
     The deployment file contains definitions for the following:
 
