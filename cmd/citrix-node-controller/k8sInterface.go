@@ -139,8 +139,12 @@ func HandleConfigMapUpdateEvent(api *KubernetesAPIServer, obj interface{}, newob
 					cni := ConfigMapDataNew["CNI-"+kv[1]]
 					Network := strings.Split(cni, "/")
 					fmt.Println("[INFO] Interface Mac CNI", node.PodAddress, node.PodVTEP, cni)
-					node.PodNetwork = Network[0]
-					node.PodMaskLen = Network[1]
+					if (len(Network) == 2){
+						node.PodNetwork = Network[0]
+						node.PodMaskLen = Network[1]
+					}else{
+						klog.Error("[ERROR] Could not fetch Network, need enhancements", Network)
+					}
 					node.PodNetMask = ConvertPrefixLenToMask(node.PodMaskLen)
 					NsInterfaceAddRoute(IngressDeviceClient, ControllerInputObj, node)
 					NodeList = append(NodeList, node)

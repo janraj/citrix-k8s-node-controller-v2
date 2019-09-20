@@ -70,15 +70,21 @@ spec:
       serviceAccountName: citrix-node-controller
       containers:
       - name: citrix-node-controller
-        image: "quay.io/citrix/citrix-k8s-node-controller:beta"
+        image: "quay.io/citrix/citrix-k8s-node-controller:beta-v2"
         imagePullPolicy: Always
         env:
         - name: NS_IP
           value: "xxxxxxx"
         - name: NS_USER
-          value: "xxxxx"
+          valueFrom:
+            secretKeyRef:
+             name: nslogin
+             key: username
         - name: NS_PASSWORD
-          value: "xxxxx"
+          valueFrom:
+            secretKeyRef:
+             name: nslogin
+             key: password
         - name: NETWORK
           value: "192.168.1.0/24"
         - name: REMOTE_VTEPIP
