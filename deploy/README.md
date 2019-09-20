@@ -38,7 +38,7 @@ Perform the following:
 
         kubectl apply -f https://raw.githubusercontent.com/janraj/citrix-k8s-node-controller-v2/master/deploy/config_map.yaml
 
-## Delete the Citrix K8s node conroller 
+# Delete the Citrix K8s node conroller 
 
 
 1.  Delete the [config map](config_map.yaml) using the following command:
