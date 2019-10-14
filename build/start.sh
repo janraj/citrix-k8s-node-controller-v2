@@ -7,7 +7,7 @@ if [ $status -ne 0 ]; then
   echo "Failed to start Route Extender: $status"
   exit $status
 fi
-
+sleep 40
 # Start the citrix node controller
 ./go/bin/citrix-node-controller -D &
 status=$?
